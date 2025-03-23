@@ -14,13 +14,11 @@ app.post('/webhook', line.middleware(lineConfig), (req, res) => {
  console.log('📨 Received LINE Webhook Request');
  console.log('Request Body:', JSON.stringify(req.body, null, 2));
 
- // ตรวจสอบว่ามี events หรือไม่
  if (!req.body.events || req.body.events.length === 0) {
    console.log('❌ No events in webhook request');
    return res.status(200).json({ message: 'No events' });
  }
 
- // จัดการ events
  Promise
    .all(req.body.events.map(handleEvent))
    .then((result) => {
@@ -55,24 +53,20 @@ async function handleEvent(event) {
  }
 }
 
-// จัดการ message event
 async function handleMessageEvent(event) {
  console.log('💬 Message Event:', event.message);
- 
- // ตอบกลับข้อความง่ายๆ
- return line.replyMessage(event.replyToken, {
+
+ return lineClient.replyMessage(event.replyToken, {
    type: 'text',
    text: `Received: ${event.message.text}`
  });
 }
 
-// จัดการ follow event
 async function handleFollowEvent(event) {
  console.log('👥 User Followed Bot:', event.source.userId);
  return Promise.resolve(null);
 }
 
-// จัดการ unfollow event
 async function handleUnfollowEvent(event) {
  console.log('👋 User Unfollowed Bot:', event.source.userId);
  return Promise.resolve(null);
@@ -85,6 +79,13 @@ app.use((err, req, res, next) => {
    success: false, 
    message: 'Unexpected server error' 
  });
+});
+
+// ✅ ✅ ✅ เปิดประตูให้ LINE เข้ามาได้!
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+ console.log(`✅ LINE Bot 2 is running on port ${PORT}`);
+ console.log(`🌐 Webhook is ready at: /webhook`);
 });
 
 module.exports = app;
