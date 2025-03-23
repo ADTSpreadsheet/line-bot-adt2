@@ -196,6 +196,12 @@ app.get("/", (req, res) => {
   res.send("ADT Line Bot 2 Webhook is running.");
 });
 
+// ✅ วางตรงนี้
+app.post("/webhook-lite", (req, res) => {
+  console.log("✅ LINE Verify มาถึง /webhook-lite แล้ว");
+  res.sendStatus(200);
+});
+
 // Server Start
 const PORT = process.env.PORT || 10000;
 const server = app.listen(PORT, () => {
