@@ -1,11 +1,19 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
+const line = require('@line/bot-sdk');
 const registrationRouter = require("./routes/registration");
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// LINE Bot Configuration
+const lineConfig = {
+ channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+ channelSecret: process.env.LINE_CHANNEL_SECRET
+};
+const lineClient = new line.Client(lineConfig);
 
 // Middleware logging ละเอียด
 app.use((req, res, next) => {
@@ -44,6 +52,48 @@ app.use((req, res, next) => {
 });
 
 app.use(bodyParser.json());
+
+// LINE Webhook Middleware
+app.post('/webhook', line.middleware(lineConfig), (req, res) => {
+ Promise
+   .all(req.body.events.map(handleEvent))
+   .then((result) => res.json(result))
+   .catch((err) => {
+     console.error('Error processing webhook:', err);
+     res.status(500).end();
+   });
+});
+
+// ฟังก์ชันจัดการ event จาก LINE
+async function handleEvent(event) {
+ console.log('Received LINE event:', event);
+ 
+ // จัดการ event ตามประเภท
+ switch (event.type) {
+   case 'message':
+     return handleMessageEvent(event);
+   case 'follow':
+     return handleFollowEvent(event);
+   default:
+     return Promise.resolve(null);
+ }
+}
+
+function handleMessageEvent(event) {
+ const message = event.message;
+ 
+ // ตอบกลับข้อความ
+ return lineClient.replyMessage(event.replyToken, {
+   type: 'text',
+   text: `ได้รับข้อความ: ${message.text}`
+ });
+}
+
+function handleFollowEvent(event) {
+ console.log('User followed:', event.source.userId);
+ return Promise.resolve(null);
+}
+
 // Routes
 app.use("/webhook2", registrationRouter);
 
