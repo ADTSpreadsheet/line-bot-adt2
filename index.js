@@ -202,6 +202,13 @@ app.post("/webhook-lite", (req, res) => {
   res.sendStatus(200);
 });
 
+app.post("/webhook2", (req, res) => {
+  console.log("✅ Webhook2 รับข้อมูลแล้วครับ 🎉");
+  console.log("📦 Request Body:", req.body);
+  res.sendStatus(200);
+});
+
+
 // Server Start
 const PORT = process.env.PORT || 10000;
 const server = app.listen(PORT, () => {
