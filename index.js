@@ -1,91 +1,109 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
-const bodyParser = require('body-parser');
 
 const lineConfig = {
- channelAccessToken: process.env.LINE_BOT2_ACCESS_TOKEN,
- channelSecret: process.env.LINE_BOT2_CHANNEL_SECRET
+  channelAccessToken: process.env.LINE_BOT2_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_BOT2_CHANNEL_SECRET
 };
 
 const app = express();
 
-// Middleware สำหรับ LINE Webhook
-app.post('/webhook', line.middleware(lineConfig), (req, res) => {
- console.log('📨 Received LINE Webhook Request');
- console.log('Request Body:', JSON.stringify(req.body, null, 2));
+// ✅ Logging Middleware ก่อนทุก Route
+app.use((req, res, next) => {
+  console.log('---------------------------------------------');
+  console.log('🛰️ Incoming Request');
+  console.log('📅 Time:', new Date().toISOString());
+  console.log('🌐 Method:', req.method);
+  console.log('🔗 Path:', req.originalUrl);
+  console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
 
- if (!req.body.events || req.body.events.length === 0) {
-   console.log('❌ No events in webhook request');
-   return res.status(200).json({ message: 'No events' });
- }
-
- Promise
-   .all(req.body.events.map(handleEvent))
-   .then((result) => {
-     console.log('✅ Successfully processed events');
-     res.json(result);
-   })
-   .catch((err) => {
-     console.error('❌ Error processing webhook events:', err);
-     res.status(500).json({ error: 'Webhook event processing failed' });
-   });
+  let rawData = [];
+  req.on('data', chunk => {
+    rawData.push(chunk);
+  }).on('end', () => {
+    const rawBody = Buffer.concat(rawData).toString();
+    console.log('📦 Raw Body:', rawBody || '[No Body]');
+    req.rawBody = rawBody;
+    next();
+  });
 });
 
-// ฟังก์ชันจัดการ event
-async function handleEvent(event) {
- console.log('📝 Handling Event:', JSON.stringify(event, null, 2));
+// ✅ Webhook Route จาก LINE
+app.post('/webhook', line.middleware(lineConfig), (req, res) => {
+  console.log('📨 Received LINE Webhook Request');
+  console.log('📦 Parsed Events:', JSON.stringify(req.body.events, null, 2));
 
- try {
-   switch (event.type) {
-     case 'message':
-       return await handleMessageEvent(event);
-     case 'follow':
-       return await handleFollowEvent(event);
-     case 'unfollow':
-       return await handleUnfollowEvent(event);
-     default:
-       console.log(`🔔 Unhandled event type: ${event.type}`);
-       return Promise.resolve(null);
-   }
- } catch (error) {
-   console.error(`❌ Error handling ${event.type} event:`, error);
-   return Promise.resolve(null);
- }
+  if (!req.body.events || req.body.events.length === 0) {
+    console.log('⚠️ No events received.');
+    return res.status(200).json({ message: 'No events' });
+  }
+
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => {
+      console.log('✅ All events handled successfully.');
+      res.json(result);
+    })
+    .catch((err) => {
+      console.error('❌ Error handling events:', err);
+      res.status(500).json({ error: 'Failed to process events' });
+    });
+});
+
+// ✅ Handler Function
+async function handleEvent(event) {
+  console.log('📝 Handling Event:', JSON.stringify(event, null, 2));
+
+  try {
+    switch (event.type) {
+      case 'message':
+        return await handleMessageEvent(event);
+      case 'follow':
+        return await handleFollowEvent(event);
+      case 'unfollow':
+        return await handleUnfollowEvent(event);
+      default:
+        console.log(`🔔 Unhandled event type: ${event.type}`);
+        return Promise.resolve(null);
+    }
+  } catch (error) {
+    console.error(`❌ Error in ${event.type} handler:`, error);
+    return Promise.resolve(null);
+  }
 }
 
 async function handleMessageEvent(event) {
- console.log('💬 Message Event:', event.message);
+  console.log('💬 Message Event:', event.message);
 
- return lineClient.replyMessage(event.replyToken, {
-   type: 'text',
-   text: `Received: ${event.message.text}`
- });
+  // ตอบกลับข้อความ
+  const client = new line.Client(lineConfig);
+  return client.replyMessage(event.replyToken, {
+    type: 'text',
+    text: `Received: ${event.message.text}`
+  });
 }
 
 async function handleFollowEvent(event) {
- console.log('👥 User Followed Bot:', event.source.userId);
- return Promise.resolve(null);
+  console.log('👥 User Followed:', event.source.userId);
+  return Promise.resolve(null);
 }
 
 async function handleUnfollowEvent(event) {
- console.log('👋 User Unfollowed Bot:', event.source.userId);
- return Promise.resolve(null);
+  console.log('👋 User Unfollowed:', event.source.userId);
+  return Promise.resolve(null);
 }
 
-// Error handling middleware
+// ✅ Error Handler
 app.use((err, req, res, next) => {
- console.error('🚨 Unhandled Error:', err);
- res.status(500).json({ 
-   success: false, 
-   message: 'Unexpected server error' 
- });
+  console.error('🚨 Unhandled Server Error:', err);
+  res.status(500).json({ error: 'Server error' });
 });
 
-// ✅ ✅ ✅ เปิดประตูให้ LINE เข้ามาได้!
+// ✅ Start Server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
- console.log(`✅ LINE Bot 2 is running on port ${PORT}`);
- console.log(`🌐 Webhook is ready at: /webhook`);
+  console.log(`✅ LINE Bot 2 is running on port ${PORT}`);
+  console.log(`🌐 Webhook is ready at: /webhook`);
 });
 
 module.exports = app;
