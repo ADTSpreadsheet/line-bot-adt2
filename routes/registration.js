@@ -3,7 +3,9 @@ const router = express.Router();
 const { sendLineNotify } = require("../utils/lineBot");
 const { insertUserRegistration } = require("../utils/database");
 
-// Enhanced logging middleware
+//
+// ✅ 1. Enhanced Logging Middleware
+//
 const requestLogger = (req, res, next) => {
   console.log('🔍 Incoming Webhook2 Request:');
   console.log(`⏰ Timestamp: ${new Date().toISOString()}`);
@@ -14,7 +16,9 @@ const requestLogger = (req, res, next) => {
   next();
 };
 
-// Error tracking middleware
+//
+// ✅ 2. Error Tracking Middleware
+//
 const errorTracker = (error, req, res, next) => {
   console.error('🚨 Detailed Error Tracking:', {
     timestamp: new Date().toISOString(),
@@ -27,15 +31,17 @@ const errorTracker = (error, req, res, next) => {
   next(error);
 };
 
-// Main route handler
+//
+// ✅ 3. Main Route Handler
+//
 router.post("/",
   requestLogger,
   async (req, res, next) => {
     const data = req.body;
 
-    // Mapping fields to match table structure in user_registrations
+    // 🧱 Mapping to match table `user_registrations`
     const registrationData = {
-      line_user_id: '', // Optional, can be updated later if available
+      line_user_id: '',
       machine_id: data.machine_id || '',
       first_name: data.first_name,
       last_name: data.last_name,
@@ -51,12 +57,19 @@ router.post("/",
 
     try {
       console.log('✅ Validated registration data received');
+      console.log('📥 Sending data to Supabase:', registrationData);
 
+      // 📡 ส่งข้อมูลพร้อมกันทั้ง Supabase และ LINE Notify
       const [supabaseResult, lineNotifyResult] = await Promise.all([
         insertUserRegistration(registrationData),
         sendLineNotify(registrationData)
       ]);
 
+      // 🧾 แสดงผลลัพธ์จากทั้งสองฝั่ง
+      console.log('📦 Supabase Result:', supabaseResult);
+      console.log('📲 LINE Notify Result:', lineNotifyResult);
+
+      // 📤 ตอบกลับ Excel VBA
       res.status(200).json({
         success: true,
         message: "Data saved and notified",
@@ -65,13 +78,16 @@ router.post("/",
           lineNotifyResult
         }
       });
+
     } catch (error) {
       next(error);
     }
   }
 );
 
-// Global error handler
+//
+// ✅ 4. Global Error Handling
+//
 router.use(errorTracker);
 router.use((err, req, res, next) => {
   console.error('🔥 Unhandled Error:', err);
