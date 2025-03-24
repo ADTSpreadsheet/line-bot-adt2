@@ -38,10 +38,11 @@ router.post("/",
   requestLogger,
   async (req, res, next) => {
     const data = req.body;
+    const now = new Date();
 
     // 🧱 Mapping to match table `user_registrations`
     const registrationData = {
-      line_user_id: '',
+      line_user_id: '', // สามารถเติมในอนาคตถ้ามี
       machine_id: data.machine_id || '',
       first_name: data.first_name,
       last_name: data.last_name,
@@ -52,6 +53,9 @@ router.post("/",
       email: data.email,
       national_id: data.national_id,
       ip_address: data.ip_address,
+      day_created_at: now.toISOString().slice(0, 10),
+      verify_at: now.toISOString(),
+      expires_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'VERIFIED'
     };
 
