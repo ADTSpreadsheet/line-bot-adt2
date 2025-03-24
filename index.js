@@ -122,10 +122,14 @@ app.post('/webhook2', async (req, res) => {
                     `🔑 Machine ID: ${machine_id || 'ไม่ระบุ'}\n`;
     
     // Define the LINE user ID to send to
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'U4c25e58467d49f4732cebe0656371c3b';
+    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
     
-    // Send the message to LINE Bot 2
-    await sendMessageToLineBot2(message, lineUserIdToNotify);
+    // Try to send message but don't fail if it doesn't work
+    try {
+      await sendMessageToLineBot2(message, lineUserIdToNotify);
+    } catch (lineError) {
+      console.error("⚠️ Could not send LINE notification, but registration was successful:", lineError.message);
+    }
     
     // Return success response
     res.status(200).json({ 
@@ -184,7 +188,7 @@ async function handleMessage(event) {
 async function sendMessageToLineBot2(message, userId) {
   if (!userId || userId === 'LINE_USER_ID') {
     console.warn('⚠️ No valid LINE user ID provided. Using fallback admin ID.');
-    userId = process.env.ADMIN_LINE_USER_ID;
+    userId = 'Ub7406c5f05771fb36c32c1b1397539f6';
   }
   
   if (!userId) {
