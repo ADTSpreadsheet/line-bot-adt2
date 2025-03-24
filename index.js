@@ -39,7 +39,22 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
 app.post('/webhook2', async (req, res) => {
   try {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
-    // TODO: Add Supabase or other processing logic here
+    
+    // Get data from the VBA form
+    const { ref_code, first_name, last_name, house_number, district, province, phone_number, email, national_id } = req.body;
+    
+    // Prepare the message to be sent to LINE Bot 2
+    const message = `🎉 มีผู้ใช้รายใหม่ลงทะเบียนสำเร็จ 🎉\n\n` +
+                    `📄 Ref. Code: ${ref_code}\n` +
+                    `👤 ชื่อ: ${first_name} ${last_name}\n` +
+                    `🏠 ที่อยู่: ${house_number}, ${district}, ${province}\n` +
+                    `📞 เบอร์โทร: ${phone_number}\n` + 
+                    `📧 อีเมล: ${email}\n` +
+                    `💳 หมายเลขบัตรประชาชน: ${national_id}\n`;
+
+    // Send the message to LINE Bot 2
+    await sendMessageToLineBot2(message);
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("❌ Error in /webhook2:", error);
@@ -87,4 +102,20 @@ async function handleMessage(event) {
     text: `Received: ${event.message.text}`
   };
   return client.replyMessage(event.replyToken, message);
+}
+
+// Function to send message to LINE Bot 2
+async function sendMessageToLineBot2(message) {
+  const client = new line.Client(lineConfig);
+  const textMessage = {
+    type: 'text',
+    text: message
+  };
+
+  try {
+    await client.pushMessage('LINE_USER_ID', textMessage); // Replace 'LINE_USER_ID' with your target user ID
+    console.log('✅ Message sent to LINE Bot 2');
+  } catch (error) {
+    console.error('❌ Failed to send message to LINE Bot 2:', error);
+  }
 }
