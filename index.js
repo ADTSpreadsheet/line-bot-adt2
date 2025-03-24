@@ -3,12 +3,20 @@ require('dotenv').config();
 const express = require('express');
 const line = require('@line/bot-sdk');
 const bodyParser = require('body-parser');
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// Line configuration
 const lineConfig = {
   channelAccessToken: process.env.LINE_BOT2_ACCESS_TOKEN,
   channelSecret: process.env.LINE_BOT2_CHANNEL_SECRET
 };
+
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
 app.use(bodyParser.json());
@@ -47,8 +55,60 @@ app.post('/webhook2', async (req, res) => {
       phone_number, 
       email, 
       national_id,
+      ip_address,
       machine_id 
     } = req.body;
+    
+    // Get LINE user ID from verification endpoint using ref_code
+    let line_user_id = "unknown";
+    try {
+      if (ref_code) {
+        // Try to fetch the LINE user ID associated with this ref_code
+        const verifyResponse = await fetch(`https://line-bot-adt.onrender.com/verify/${ref_code}`);
+        if (verifyResponse.ok) {
+          const data = await verifyResponse.json();
+          if (data.success && data.line_user_id) {
+            line_user_id = data.line_user_id;
+          }
+        }
+      }
+    } catch (verifyError) {
+      console.error("⚠️ Could not verify LINE user ID:", verifyError);
+    }
+    
+    // Create database record in Supabase
+    const currentDate = new Date().toISOString();
+    const expiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days from now
+    
+    const { data, error } = await supabase
+      .from('user_registrations')
+      .insert([
+        {
+          line_user_id: line_user_id,
+          machine_id: machine_id || null,
+          first_name: first_name || null,
+          last_name: last_name || null,
+          house_number: house_number || null,
+          district: district || null,
+          province: province || null,
+          phone_number: phone_number || null,
+          email: email || null,
+          national_id: national_id || null,
+          ip_address: ip_address || null,
+          day_created_at: currentDate.split('T')[0], // Just the date part
+          verify_at: currentDate,
+          expires_at: expiresDate,
+          status: 'active'
+        }
+      ])
+      .select();
+    
+    if (error) {
+      console.error("❌ Supabase insert error:", error);
+      throw new Error(`Failed to save registration: ${error.message}`);
+    }
+    
+    console.log("✅ Registration saved in Supabase:", data);
     
     // Prepare the message to be sent to LINE Bot 2
     const message = `🎉 มีผู้ใช้รายใหม่ลงทะเบียนสำเร็จ 🎉\n\n` +
@@ -67,7 +127,11 @@ app.post('/webhook2', async (req, res) => {
     await sendMessageToLineBot2(message, lineUserIdToNotify);
     
     // Return success response
-    res.status(200).json({ success: true });
+    res.status(200).json({ 
+      success: true, 
+      message: "Registration successful and saved to database",
+      expires_at: expiresDate
+    });
   } catch (error) {
     console.error("❌ Error in /webhook2:", error);
     res.status(500).json({ success: false, error: error.message });
