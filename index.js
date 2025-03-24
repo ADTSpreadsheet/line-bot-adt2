@@ -27,18 +27,20 @@ app.post('/webhook2', async (req, res) => {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
     
     const { 
-      ref_code, 
-      first_name, 
-      last_name, 
-      house_number, 
-      district, 
-      province, 
-      phone_number, 
-      email, 
-      national_id,
-      ip_address,
-      machine_id 
-    } = req.body;
+  ref_code, 
+  line_user_id, // ✅ เพิ่มตรงนี้
+  first_name, 
+  last_name, 
+  house_number, 
+  district, 
+  province, 
+  phone_number, 
+  email, 
+  national_id,
+  ip_address,
+  machine_id 
+} = req.body;
+
     
     // Validate required fields
     if (!ref_code) {
