@@ -40,7 +40,6 @@ app.post('/webhook2', async (req, res) => {
       ip_address,
       machine_id 
     } = req.body;
-
     
     // Validate required fields
     if (!ref_code) {
@@ -73,7 +72,6 @@ app.post('/webhook2', async (req, res) => {
       expires_at: expiresDate.toISOString(),
       status: 'ACTIVE'
     };
-
     
     // Insert registration
     const { data, error } = await supabase
@@ -157,7 +155,21 @@ app.post('/webhook2', async (req, res) => {
   }
 });
 
-// Existing functions for LINE messaging (sendMessageToLineBot2, etc.) remain the same
+// เพิ่มฟังก์ชัน sendMessageToLineBot2
+async function sendMessageToLineBot2(message, userId) {
+  try {
+    const client = new line.Client(lineConfig);
+    await client.pushMessage(userId, {
+      type: 'text',
+      text: message
+    });
+    console.log(`✅ Sent notification to LINE user: ${userId}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send LINE message: ${error.message}`);
+    throw error;
+  }
+}
 
 // Server startup
 app.listen(PORT, () => {
