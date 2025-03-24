@@ -26,6 +26,8 @@ async function insertUserRegistration(data) {
       status: 'VERIFIED'
     };
 
+    console.log('🔎 Final Payload to Supabase:', payload);
+
     const { data: insertedData, error } = await supabaseClient
       .from("user_registrations")
       .insert([payload])
