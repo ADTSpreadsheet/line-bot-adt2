@@ -56,22 +56,24 @@ app.post('/webhook2', async (req, res) => {
     
     // Prepare registration data
     const registrationData = {
-      ref_code,
-      machine_id: machine_id || null,
-      first_name: first_name || null,
-      last_name: last_name || null,
-      house_number: house_number || null,
-      district: district || null,
-      province: province || null,
-      phone_number: phone_number || null,
-      email: email || null,
-      national_id: national_id || null,
-      ip_address: ip_address || null,
-      day_created_at: now.toISOString(),
-      verify_at: now.toISOString(),
-      expires_at: expiresDate.toISOString(),
-      status: 'ACTIVE'
-    };
+  ref_code,
+  line_user_id, // ✅ เพิ่มตรงนี้
+  machine_id: machine_id || null,
+  first_name: first_name || null,
+  last_name: last_name || null,
+  house_number: house_number || null,
+  district: district || null,
+  province: province || null,
+  phone_number: phone_number || null,
+  email: email || null,
+  national_id: national_id || null,
+  ip_address: ip_address || null,
+  day_created_at: now.toISOString(),
+  verify_at: now.toISOString(),
+  expires_at: expiresDate.toISOString(),
+  status: 'ACTIVE'
+};
+
     
     // Insert registration
     const { data, error } = await supabase
