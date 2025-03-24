@@ -110,34 +110,43 @@ app.post('/webhook2', async (req, res) => {
       });
     }
     
+        // ✅ บันทึกสำเร็จใน Supabase
     console.log("✅ Registration saved in Supabase:", data);
-    
-    // Prepare notification message
-    const message = `🎉 มีผู้ใช้รายใหม่ลงทะเบียนสำเร็จ 🎉\n\n` +
-                    `📄 Ref. Code: ${ref_code || 'ไม่ระบุ'}\n` +
-                    `👤 ชื่อ: ${first_name || ''} ${last_name || ''}\n` +
-                    `🏠 ที่อยู่: ${house_number || ''}, ${district || ''}, ${province || ''}\n` +
-                    `📞 เบอร์โทร: ${phone_number || 'ไม่ระบุ'}\n` + 
-                    `📧 อีเมล: ${email || 'ไม่ระบุ'}\n` +
-                    `💳 หมายเลขบัตรประชาชน: ${national_id || 'ไม่ระบุ'}\n` +
-                    `🔑 Machine ID: ${machine_id || 'ไม่ระบุ'}\n`;
-    
+
+    // 📅 ดึงวันเวลาปัจจุบันในรูปแบบไทย
+    const dateObj = new Date();
+    const formattedDate = dateObj.toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+    const formattedTime = dateObj.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    // ✅ ข้อความแจ้งเตือน LINE (เรียบง่าย ดูดี)
+    const message = `✅ ผู้ลงทะเบียนสำเร็จรายใหม่\n` +
+                    `Ref. Code: ${ref_code}\n` +
+                    `🕒 เวลา: ${formattedDate} ${formattedTime} น.`;
+
     // Define LINE user ID to notify
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
-    
+
     // Send notification (non-blocking)
     try {
       await sendMessageToLineBot2(message, lineUserIdToNotify);
     } catch (lineError) {
       console.error("⚠️ Could not send LINE notification:", lineError.message);
     }
-    
+
     // Return success response
     res.status(200).json({ 
       success: true, 
       message: "Registration successful",
       expires_at: expiresDate.toISOString()
     });
+
   } catch (error) {
     console.error("❌ Unexpected error in /webhook2:", error);
     res.status(500).json({ 
