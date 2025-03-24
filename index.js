@@ -27,19 +27,19 @@ app.post('/webhook2', async (req, res) => {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
     
     const { 
-  ref_code, 
-  line_user_id, // ✅ เพิ่มตรงนี้
-  first_name, 
-  last_name, 
-  house_number, 
-  district, 
-  province, 
-  phone_number, 
-  email, 
-  national_id,
-  ip_address,
-  machine_id 
-} = req.body;
+      ref_code, 
+      // line_user_id ถูกลบออก
+      first_name, 
+      last_name, 
+      house_number, 
+      district, 
+      province, 
+      phone_number, 
+      email, 
+      national_id,
+      ip_address,
+      machine_id 
+    } = req.body;
 
     
     // Validate required fields
@@ -56,23 +56,23 @@ app.post('/webhook2', async (req, res) => {
     
     // Prepare registration data
     const registrationData = {
-  ref_code,
-  line_user_id, // ✅ เพิ่มตรงนี้
-  machine_id: machine_id || null,
-  first_name: first_name || null,
-  last_name: last_name || null,
-  house_number: house_number || null,
-  district: district || null,
-  province: province || null,
-  phone_number: phone_number || null,
-  email: email || null,
-  national_id: national_id || null,
-  ip_address: ip_address || null,
-  day_created_at: now.toISOString(),
-  verify_at: now.toISOString(),
-  expires_at: expiresDate.toISOString(),
-  status: 'ACTIVE'
-};
+      ref_code,
+      // line_user_id ถูกลบออก
+      machine_id: machine_id || null,
+      first_name: first_name || null,
+      last_name: last_name || null,
+      house_number: house_number || null,
+      district: district || null,
+      province: province || null,
+      phone_number: phone_number || null,
+      email: email || null,
+      national_id: national_id || null,
+      ip_address: ip_address || null,
+      day_created_at: now.toISOString(),
+      verify_at: now.toISOString(),
+      expires_at: expiresDate.toISOString(),
+      status: 'ACTIVE'
+    };
 
     
     // Insert registration
@@ -110,7 +110,7 @@ app.post('/webhook2', async (req, res) => {
       });
     }
     
-        // ✅ บันทึกสำเร็จใน Supabase
+    // ✅ บันทึกสำเร็จใน Supabase
     console.log("✅ Registration saved in Supabase:", data);
 
     // 📅 ดึงวันเวลาปัจจุบันในรูปแบบไทย
