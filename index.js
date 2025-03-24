@@ -60,7 +60,7 @@ app.post('/webhook2', async (req, res) => {
     } = req.body;
     
     // Get LINE user ID from verification endpoint using ref_code
-    let line_user_id = "unknown";
+    let line_user_id = "";
     try {
       if (ref_code) {
         // Try to fetch the LINE user ID associated with this ref_code
@@ -77,8 +77,9 @@ app.post('/webhook2', async (req, res) => {
     }
     
     // Create database record in Supabase
-    const currentDate = new Date().toISOString();
-    const expiresDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days from now
+    const now = new Date();
+    const expiresDate = new Date(now);
+    expiresDate.setDate(now.getDate() + 7); // 7 days from now
     
     const { data, error } = await supabase
       .from('user_registrations')
@@ -95,10 +96,10 @@ app.post('/webhook2', async (req, res) => {
           email: email || null,
           national_id: national_id || null,
           ip_address: ip_address || null,
-          day_created_at: currentDate.split('T')[0], // Just the date part
-          verify_at: currentDate,
-          expires_at: expiresDate,
-          status: 'active'
+          day_created_at: now.toISOString(),
+          verify_at: now.toISOString(),
+          expires_at: expiresDate.toISOString(),
+          status: 'ACTIVE'
         }
       ])
       .select();
@@ -130,7 +131,7 @@ app.post('/webhook2', async (req, res) => {
     res.status(200).json({ 
       success: true, 
       message: "Registration successful and saved to database",
-      expires_at: expiresDate
+      expires_at: expiresDate.toISOString()
     });
   } catch (error) {
     console.error("❌ Error in /webhook2:", error);
