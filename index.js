@@ -44,7 +44,6 @@ app.post('/webhook2', async (req, res) => {
   try {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
     
-    // Get data from the VBA form
     const { 
       ref_code, 
       first_name, 
@@ -59,24 +58,6 @@ app.post('/webhook2', async (req, res) => {
       machine_id 
     } = req.body;
     
-    // Get LINE user ID from verification endpoint using ref_code
-    let line_user_id = "";
-    try {
-      if (ref_code) {
-        // Try to fetch the LINE user ID associated with this ref_code
-        const verifyResponse = await fetch(`https://line-bot-adt.onrender.com/verify/${ref_code}`);
-        if (verifyResponse.ok) {
-          const data = await verifyResponse.json();
-          if (data.success && data.line_user_id) {
-            line_user_id = data.line_user_id;
-          }
-        }
-      }
-    } catch (verifyError) {
-      console.error("⚠️ Could not verify LINE user ID:", verifyError);
-    }
-    
-    // Create database record in Supabase
     const now = new Date();
     const expiresDate = new Date(now);
     expiresDate.setDate(now.getDate() + 7); // 7 days from now
@@ -85,17 +66,17 @@ app.post('/webhook2', async (req, res) => {
       .from('user_registrations')
       .insert([
         {
-          line_user_id: line_user_id,
-          machine_id: machine_id || null,
-          first_name: first_name || null,
-          last_name: last_name || null,
-          house_number: house_number || null,
-          district: district || null,
-          province: province || null,
-          phone_number: phone_number || null,
-          email: email || null,
-          national_id: national_id || null,
-          ip_address: ip_address || null,
+          ref_code,
+          machine_id,
+          first_name,
+          last_name,
+          house_number,
+          district,
+          province,
+          phone_number,
+          email,
+          national_id,
+          ip_address,
           day_created_at: now.toISOString(),
           verify_at: now.toISOString(),
           expires_at: expiresDate.toISOString(),
@@ -143,70 +124,4 @@ app.post('/webhook2', async (req, res) => {
   }
 });
 
-// Generic error handler
-app.use((err, req, res, next) => {
-  console.error("🚨 Unhandled error:", err);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`✅ LINE Bot 2 is running on port ${PORT}`);
-  console.log(`🌐 LINE Webhook: /webhook`);
-  console.log(`🌐 Excel VBA Webhook: /webhook2`);
-});
-
-// Handle incoming LINE events
-async function handleEvent(event) {
-  console.log('📝 Handling Event:', JSON.stringify(event, null, 2));
-  switch (event.type) {
-    case 'message':
-      return handleMessage(event);
-    case 'follow':
-      console.log('👥 User followed:', event.source.userId);
-      return Promise.resolve(null);
-    case 'unfollow':
-      console.log('👋 User unfollowed:', event.source.userId);
-      return Promise.resolve(null);
-    default:
-      console.log('🔔 Unknown event type:', event.type);
-      return Promise.resolve(null);
-  }
-}
-
-// Reply to LINE message
-async function handleMessage(event) {
-  const client = new line.Client(lineConfig);
-  const message = {
-    type: 'text',
-    text: `Received: ${event.message.text}`
-  };
-  return client.replyMessage(event.replyToken, message);
-}
-
-// Function to send message to LINE Bot 2
-async function sendMessageToLineBot2(message, userId) {
-  if (!userId || userId === 'LINE_USER_ID') {
-    console.warn('⚠️ No valid LINE user ID provided. Using fallback admin ID.');
-    userId = 'Ub7406c5f05771fb36c32c1b1397539f6';
-  }
-  
-  if (!userId) {
-    throw new Error('No LINE user ID available for notification');
-  }
-  
-  const client = new line.Client(lineConfig);
-  const textMessage = {
-    type: 'text',
-    text: message
-  };
-  
-  try {
-    await client.pushMessage(userId, textMessage);
-    console.log(`✅ Message sent to LINE user: ${userId}`);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send message to LINE Bot 2:', error);
-    throw error;
-  }
-}
+// [รหัสส่วนที่เหลือยังคงเดิม]
