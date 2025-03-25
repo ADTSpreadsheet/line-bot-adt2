@@ -12,22 +12,35 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ฟังก์ชันสำหรับส่งข้อความไปยัง LINE
+// ฟังก์ชันสำหรับส่งข้อความไปยัง LINE (ปรับปรุงใหม่)
 async function sendMessageToLineBot2(message, userId) {
-  console.log(`📤 Sending LINE message to ${userId}: ${message}`);
+  console.log(`📤 Preparing to send LINE message to ${userId}`);
+  
+  // ตรวจสอบ token
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not set");
+  }
+  
+  console.log(`Token exists: ${Boolean(token)}, Length: ${token.length}`);
+  
   try {
+    // ทำให้แน่ใจว่าข้อความเป็น string และตัดช่องว่างที่ไม่จำเป็น
+    const cleanMessage = message.toString().trim();
+    console.log(`Sending cleaned message: ${cleanMessage}`);
+    
     const response = await axios.post('https://api.line.me/v2/bot/message/push', {
       to: userId,
       messages: [
         {
           type: 'text',
-          text: message
+          text: cleanMessage
         }
       ]
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
+        'Authorization': `Bearer ${token}`
       }
     });
     
@@ -38,7 +51,7 @@ async function sendMessageToLineBot2(message, userId) {
     if (error.response) {
       console.error(`Error details: ${JSON.stringify(error.response.data)}`);
     }
-    throw error; // Re-throw to be caught by the caller
+    throw error;
   }
 }
 
@@ -125,7 +138,9 @@ app.post('/webhook2', async (req, res) => {
     const formattedTime = now.toLocaleTimeString("th-TH", {
       hour: "2-digit", minute: "2-digit"
     });
-    const message = `✅ ผู้ลงทะเบียนสำเร็จรายใหม่\nRef. Code: ${ref_code}\n🕒 เวลา: ${formattedDate} ${formattedTime} น.`;
+    
+    // ปรับรูปแบบข้อความให้เรียบง่ายขึ้น
+    const message = `ผู้ลงทะเบียนสำเร็จรายใหม่ Ref. Code: ${ref_code} เวลา: ${formattedDate} ${formattedTime} น.`;
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
     
     // ตรวจสอบและส่งข้อความแจ้งเตือนไปยัง LINE
@@ -171,6 +186,77 @@ app.post('/webhook2', async (req, res) => {
       error: error.message 
     });
   }
+});
+
+// เพิ่ม endpoint สำหรับการทดสอบการส่งข้อความอย่างง่าย
+app.get('/test-line-message', async (req, res) => {
+  try {
+    const userId = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
+    const message = "นี่คือข้อความทดสอบจากระบบ " + new Date().toLocaleString();
+    
+    await sendMessageToLineBot2(message, userId);
+    res.send("Message sent successfully");
+  } catch (error) {
+    console.error("Error sending test message:", error);
+    res.status(500).send(`Error: ${error.message}`);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+    }
+  }
+});
+
+// เพิ่ม endpoint สำหรับการทดสอบการส่งข้อความอย่างง่ายโดยตรง (ไม่ผ่านฟังก์ชัน sendMessageToLineBot2)
+app.get('/test-direct-line-message', async (req, res) => {
+  try {
+    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    if (!token) {
+      return res.status(400).send("LINE_CHANNEL_ACCESS_TOKEN is not set");
+    }
+    
+    const userId = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
+    const testMessage = "ทดสอบการส่งข้อความโดยตรง " + new Date().toLocaleString();
+    
+    const response = await axios.post('https://api.line.me/v2/bot/message/push', {
+      to: userId,
+      messages: [
+        {
+          type: 'text',
+          text: testMessage
+        }
+      ]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: "Message sent directly",
+      details: response.data
+    });
+  } catch (error) {
+    console.error("Error in direct message:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.response ? error.response.data : null
+    });
+  }
+});
+
+// เพิ่ม endpoint สำหรับการตรวจสอบสภาพแวดล้อม
+app.get('/check-env', (req, res) => {
+  const envVars = Object.keys(process.env).sort();
+  const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  
+  res.json({
+    envCount: envVars.length,
+    envNames: envVars,
+    lineTokenExists: Boolean(lineToken),
+    lineTokenLength: lineToken ? lineToken.length : 0
+  });
 });
 
 // เพิ่ม endpoint สำหรับการอัปเดตสถานะการลงทะเบียนที่หมดอายุ
