@@ -128,9 +128,19 @@ app.post('/webhook2', async (req, res) => {
     const message = `✅ ผู้ลงทะเบียนสำเร็จรายใหม่\nRef. Code: ${ref_code}\n🕒 เวลา: ${formattedDate} ${formattedTime} น.`;
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
     
+    // ตรวจสอบและส่งข้อความแจ้งเตือนไปยัง LINE
     try {
-      await sendMessageToLineBot2(message, lineUserIdToNotify);
-      console.log(`✅ LINE notification sent successfully to ${lineUserIdToNotify}`);
+      // ตรวจสอบ token ก่อนส่งข้อความ
+      const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+      console.log(`Token exists: ${Boolean(token)}, Length: ${token?.length || 0}`);
+      
+      // ถ้า token ไม่มีอยู่ ให้ข้ามการส่งข้อความ
+      if (!token) {
+        console.error("⚠️ LINE_CHANNEL_ACCESS_TOKEN is not set");
+      } else {
+        await sendMessageToLineBot2(message, lineUserIdToNotify);
+        console.log(`✅ LINE notification sent successfully to ${lineUserIdToNotify}`);
+      }
     } catch (lineError) {
       console.error("⚠️ Could not send LINE notification:", lineError.message);
       // เพิ่มการ log รายละเอียดของ error
@@ -147,6 +157,7 @@ app.post('/webhook2', async (req, res) => {
       }
     }
     
+    // ส่ง response กลับให้ client ว่าการลงทะเบียนสำเร็จ
     res.status(200).json({ 
       success: true, 
       message: "Registration successful",
