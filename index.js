@@ -178,11 +178,10 @@ console.log("✅ Registration saved in Supabase:", data);
   ref_code: ref_code 
 });
 
+// ✅ Endpoint สำหรับรับการแจ้งเตือนการเข้า Dashboard
 app.post('/dashboard-access', async (req, res) => {
-  console.log("📣 Dashboard Access endpoint called");
-  console.log("📦 Request body:", JSON.stringify(req.body, null, 2));
-  
   try {
+    console.log("📥 Received dashboard access notification");
     const { ref_code } = req.body;
     
     if (!ref_code) {
@@ -192,14 +191,10 @@ app.post('/dashboard-access', async (req, res) => {
     // ตอบกลับ 200 ทันที
     res.status(200).json({ success: true, message: "Dashboard access recorded" });
     
-    // ส่งข้อความแจ้งเตือน (ทำงานหลังจากตอบกลับไปแล้ว)
+    // ส่งข้อความแจ้งเตือน
     const timestamp = new Date();
-    const formattedDate = timestamp.toLocaleDateString("th-TH", { 
-      day: "2-digit", month: "2-digit", year: "numeric" 
-    });
-    const formattedTime = timestamp.toLocaleTimeString("th-TH", { 
-      hour: "2-digit", minute: "2-digit" 
-    });
+    const formattedDate = timestamp.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const formattedTime = timestamp.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
     
     const notifyMessage = 
       `✅ ผู้ใช้ Ref.Code: ${ref_code}\n` +
@@ -209,11 +204,11 @@ app.post('/dashboard-access', async (req, res) => {
     
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
     sendMessageToLineBot2(notifyMessage, lineUserIdToNotify)
-      .then(() => console.log("✅ Dashboard notification sent"))
-      .catch(err => console.error("❌ Error sending notification:", err.message));
+      .then(() => console.log("✅ LINE notification sent"))
+      .catch(err => console.error("❌ LINE notification error:", err.message));
     
   } catch (error) {
-    console.error("❌ Error in dashboard-access:", error.message);
+    console.error("❌ Error:", error.message);
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: "Server error" });
     }
