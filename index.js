@@ -409,17 +409,6 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   }
 });
 
-    res.json({ success: true, result: result.data });
-  } catch (error) {
-    console.error("❌ Direct send error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-      details: error.response?.data || null
-    });
-  }
-});
-
 // Endpoint สำหรับตรวจสอบผู้ใช้
 app.get('/verify-user/:userId', async (req, res) => {
   try {
