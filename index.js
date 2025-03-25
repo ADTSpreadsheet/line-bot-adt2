@@ -20,36 +20,59 @@ const lineConfig = {
   channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
+// สร้าง LINE client
 const lineClient = new line.Client(lineConfig);
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-let lastMessageTimestamp = 0;
-const MESSAGE_COOLDOWN = 1000;
 
+// เพิ่มฟังก์ชันสำหรับหน่วงเวลา
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ตรวจสอบว่ามีการส่งข้อความไปแล้วในช่วงเวลาที่กำหนดหรือไม่
+let lastMessageTimestamp = 0;
+const MESSAGE_COOLDOWN = 1000; // 1 วินาที
+
+// ฟังก์ชันสำหรับส่งข้อความไปยัง LINE
 async function sendMessageToLineBot2(message, userId) {
   console.log(`\n📤 Preparing to send LINE message to ${userId}`);
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
   if (!token) {
     console.error("❌ LINE_CHANNEL_ACCESS_TOKEN is not set");
     return;
   }
+
+  console.log(`Token exists: ${Boolean(token)}, Length: ${token.length}`);
+
+  // ตรวจสอบเวลาที่ส่งข้อความล่าสุด
   const now = Date.now();
   const timeSinceLastMessage = now - lastMessageTimestamp;
+  
+  // หากส่งข้อความเร็วเกินไป ให้หน่วงเวลา
   if (timeSinceLastMessage < MESSAGE_COOLDOWN) {
     const waitTime = MESSAGE_COOLDOWN - timeSinceLastMessage;
     console.log(`⏳ Rate limiting: Waiting ${waitTime}ms before sending next message`);
     await delay(waitTime);
   }
+
   try {
     const cleanMessage = message.toString().trim();
+    console.log(`Sending cleaned message: ${cleanMessage}`);
+
     const response = await axios.post('https://api.line.me/v2/bot/message/push', {
       to: userId,
-      messages: [{ type: 'text', text: cleanMessage }]
+      messages: [
+        {
+          type: 'text',
+          text: cleanMessage
+        }
+      ]
     }, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
+
+    // อัปเดตเวลาที่ส่งข้อความล่าสุด
     lastMessageTimestamp = Date.now();
     console.log(`✅ LINE message sent successfully`);
     return response.data;
@@ -57,6 +80,8 @@ async function sendMessageToLineBot2(message, userId) {
     console.error(`❌ Failed to send LINE message: ${error.message}`);
     if (error.response) {
       console.error(`Error details: ${JSON.stringify(error.response.data)}`);
+      
+      // ตรวจสอบสถานะ Rate Limiting
       if (error.response.status === 429) {
         console.error("⚠️ Rate limit exceeded. Please try again later.");
       }
@@ -65,23 +90,49 @@ async function sendMessageToLineBot2(message, userId) {
   }
 }
 
+// อัปเดตสถานะการลงทะเบียนที่หมดอายุ
+async function updateExpiredRegistrations() {
+  console.log('🕒 Running task: Updating expired registrations');
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('user_registrations')
+      .update({ status: 'BLOCK' })
+      .match({ status: 'ACTIVE' })
+      .lt('expires_at', now);
+
+    if (error) {
+      console.error('❌ Failed to update expired registrations:', error);
+      return;
+    }
+
+    console.log(`✅ Updated status to BLOCK for ${data?.length || 0} expired registrations`);
+  } catch (error) {
+    console.error('❌ Error in task:', error);
+  }
+}
+
+// Webhook รับจาก Excel VBA
 app.post('/webhook2', async (req, res) => {
   if (!req.body.ref_code && !req.body.machine_id && req.body.destination && Array.isArray(req.body.events)) {
-    const events = req.body.events;
-    if (events.length > 0 && events[0].source?.userId) {
-      console.log("🟢 LINE Webhook Event (test หรือจริง):");
-      console.log("📱 LINE USER ID:", events[0].source.userId);
-      console.log("🕒 Timestamp:", new Date().toISOString());
-    } else {
-      console.log("🟡 Received test webhook from LINE Developer. No userId found.");
-    }
-    return res.status(200).send("OK");
+  const events = req.body.events;
+
+  if (events.length > 0 && events[0].source?.userId) {
+    console.log("🟢 LINE Webhook Event (test หรือจริง):");
+    console.log("📱 LINE USER ID:", events[0].source.userId);
+    console.log("🕒 Timestamp:", new Date().toISOString());
+  } else {
+    console.log("🟡 Received test webhook from LINE Developer. No userId found.");
   }
 
+  return res.status(200).send("OK");
+}
   try {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
     const { ref_code, first_name, last_name, house_number, district, province, phone_number, email, national_id, ip_address, machine_id } = req.body;
+
     if (!ref_code) {
+      console.log("❌ Missing required field: ref_code");
       return res.status(400).json({ success: false, message: "Reference Code is required" });
     }
 
@@ -109,49 +160,307 @@ app.post('/webhook2', async (req, res) => {
 
     const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
     if (error) {
+      console.error("❌ Supabase insert error:", error);
       return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
     }
+
+    console.log("✅ Registration saved in Supabase:", data);
 
     const formattedDate = now.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
     const formattedTime = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
     const message = `ลงทะเบียนสำเร็จ: ${ref_code} (${formattedDate} ${formattedTime})`;
+    
+    // ดึงค่า LINE User ID จาก Environment หรือใช้ค่า default
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
 
     try {
       await sendMessageToLineBot2(message, lineUserIdToNotify);
     } catch (lineError) {
       console.error("⚠️ Could not send LINE notification:", lineError.message);
+      if (lineError.response) {
+        console.error("Error details:", {
+          status: lineError.response.status,
+          statusText: lineError.response.statusText,
+          data: lineError.response.data
+        });
+      }
     }
 
-    res.status(200).json({ success: true });
+    // ✅ LINE Webhook to capture multiple events
+app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
+  console.log("📲 Bot 2 Webhook triggered");
+  console.log("Full webhook payload:", JSON.stringify(req.body, null, 2));
+  res.status(200).end();
+
+  const events = req.body.events;
+  if (!Array.isArray(events)) {
+    console.log("❌ No events array found");
+    return;
+  }
+
+  for (const event of events) {
+    switch(event.type) {
+      case 'follow':
+        const followUserId = event.source.userId;
+        
+        console.log(`🟢 FOLLOW EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${followUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        console.log(`=============================================`);
+
+        try {
+          await lineClient.pushMessage(followUserId, {
+            type: 'text',
+            text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
+          });
+
+          const followRegistrationData = {
+            line_user_id: followUserId,
+            registered_at: new Date().toISOString(),
+            status: 'ACTIVE'
+          };
+
+          const { data, error } = await supabase
+            .from('line_users')
+            .insert([followRegistrationData])
+            .select();
+
+          if (error) {
+            console.error('❌ Failed to save user to Supabase:', error);
+          } else {
+            console.log('✅ User saved to Supabase:', data);
+          }
+        } catch (err) {
+          console.error("❌ Failed to process follow event:", {
+            userId: followUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        break;
+
+      case 'unfollow':
+        const unfollowUserId = event.source.userId;
+        
+        console.log(`🔴 UNFOLLOW EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${unfollowUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        console.log(`=============================================`);
+
+        try {
+          const { data, error } = await supabase
+            .from('line_users')
+            .update({ status: 'INACTIVE' })
+            .eq('line_user_id', unfollowUserId);
+
+          if (error) {
+            console.error('❌ Failed to update user status:', error);
+          } else {
+            console.log('✅ User status updated to INACTIVE');
+          }
+        } catch (err) {
+          console.error("❌ Failed to process unfollow event:", {
+            userId: unfollowUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        break;
+
+      case 'message':
+        const messageUserId = event.source.userId;
+        
+        console.log(`💬 MESSAGE EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${messageUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        
+        // ตรวจสอบประเภทของข้อความ
+        if (event.message.type === 'text') {
+          console.log(`📝 Message Type: Text`);
+          console.log(`📄 Message Content: ${event.message.text}`);
+        } else if (event.message.type === 'sticker') {
+          console.log(`🌈 Message Type: Sticker`);
+          console.log(`🆔 Sticker ID: ${event.message.stickerId}`);
+          console.log(`📦 Sticker Package ID: ${event.message.packageId}`);
+        } else {
+          console.log(`📌 Message Type: ${event.message.type}`);
+        }
+        
+        console.log(`=============================================`);
+
+        // เพิ่มการบันทึกข้อความลงใน Supabase หากต้องการ
+        try {
+          const messageData = {
+            line_user_id: messageUserId,
+            message_type: event.message.type,
+            message_content: event.message.type === 'text' ? event.message.text : 
+                             event.message.type === 'sticker' ? `Sticker: ${event.message.stickerId}` : 'Other',
+            received_at: new Date().toISOString()
+          };
+
+          const { data, error } = await supabase
+            .from('line_messages')
+            .insert([messageData])
+            .select();
+
+          if (error) {
+            console.error('❌ Failed to save message to Supabase:', error);
+          } else {
+            console.log('✅ Message saved to Supabase:', data);
+          }
+        } catch (err) {
+          console.error("❌ Failed to process message event:", {
+            userId: messageUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        break;
+
+      default:
+        console.log(`📌 Other event type: ${event.type}`);
+        console.log(`📱 User ID: ${event.source?.userId || 'N/A'}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        break;
+    }
+  }
+});
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.response?.data || null
+    });
   }
 });
 
-app.post('/dashboard-access', async (req, res) => {
+// ตรวจสอบข้อมูล Channel
+app.get('/channel-status', async (req, res) => {
   try {
-    const { ref_code, machine_id, status } = req.body;
-    if (!ref_code || !machine_id || status !== 'DASHBOARD_ACCESS') {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    if (!token) {
+      return res.status(400).json({ success: false, message: "LINE_CHANNEL_ACCESS_TOKEN is not set" });
     }
-
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const formattedTime = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-
-    const fullMessage = `✅ผู้ใช้ Ref.Code : ${ref_code} ลงทะเบียนสำเร็จ\n✅สามารถเข้าสู่ Dashboard สำเร็จ\n🕒 เวลา ${formattedDate} ${formattedTime}`;
-    const adminLineUserId = process.env.ADMIN_LINE_USER_ID;
-    if (adminLineUserId) {
-      await sendMessageToLineBot2(fullMessage, adminLineUserId);
-    }
-    res.status(200).json({ success: true });
+    
+    // ตรวจสอบข้อมูล Bot
+    const botInfoResponse = await axios.get('https://api.line.me/v2/bot/info', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    res.json({
+      success: true,
+      botInfo: botInfoResponse.data
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.response?.data || null
+    });
   }
 });
 
+// ✅ LINE Webhook to capture "follow" events
+app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
+  console.log("📲 Bot 2 Webhook triggered");
+  res.status(200).end();
+
+  const events = req.body.events;
+  if (!Array.isArray(events)) return;
+
+  for (const event of events) {
+    if (event.type === 'follow') {
+      const userId = event.source.userId;
+      
+      // บันทึก LINE User ID ลงใน log
+      console.log(`🎉 User added Bot2 as a friend. 
+      LINE User ID: ${userId}
+      Event Timestamp: ${new Date().toISOString()}`);
+
+      try {
+        // ส่งข้อความต้อนรับ
+        await lineClient.pushMessage(userId, {
+          type: 'text',
+          text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
+        });
+
+        // เพิ่มการบันทึกข้อมูลผู้ใช้ลงใน Supabase
+        const registrationData = {
+          line_user_id: userId,
+          registered_at: new Date().toISOString(),
+          status: 'ACTIVE'
+        };
+
+        const { data, error } = await supabase
+          .from('line_users')
+          .insert([registrationData])
+          .select();
+
+        if (error) {
+          console.error('❌ Failed to save user to Supabase:', error);
+        } else {
+          console.log('✅ User saved to Supabase:', data);
+        }
+
+      } catch (err) {
+        console.error("❌ Failed to process follow event:", {
+          userId: userId,
+          errorMessage: err.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
+});
+
+// Endpoint สำหรับตรวจสอบผู้ใช้
+app.get('/verify-user/:userId', async (req, res) => {
+  try {
+    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    if (!token) {
+      return res.status(400).json({ success: false, message: "LINE_CHANNEL_ACCESS_TOKEN is not set" });
+    }
+    
+    const userId = req.params.userId;
+    
+    try {
+      // พยายามดึงข้อมูลโปรไฟล์ของผู้ใช้
+      const profileResponse = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      res.json({
+        success: true,
+        valid: true,
+        profile: profileResponse.data
+      });
+    } catch (profileError) {
+      // หากไม่สามารถดึงข้อมูลได้ อาจเป็นเพราะผู้ใช้ไม่มีอยู่หรือไม่ได้เพิ่ม bot เป็นเพื่อน
+      res.json({
+        success: true,
+        valid: false,
+        message: "User ID is invalid or user has not added the bot as a friend",
+        details: profileError.response?.data || null
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// เริ่มเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  updateExpiredRegistrations();
 });
