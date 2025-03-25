@@ -42,17 +42,25 @@ app.post('/webhook', lineMiddleware, async (req, res) => {
 
       if (event.type === 'message' && event.message.type === 'text') {
         const userId = event.source.userId;
-        const text = event.message.text;
+        const text = event.message.text.trim();
 
         console.log(`📝 Received message: "${text}" from user: ${userId}`);
 
         const client = new line.Client(lineConfig);
-        await client.replyMessage(event.replyToken, {
-          type: 'text',
-          text: `✅ ได้รับข้อความของคุณ: "${text}"`
-        });
 
-        console.log(`✅ Replied to message from user: ${userId}`);
+        if (text.toUpperCase() === 'PING') {
+          await client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: 'PONG'
+          });
+          console.log(`✅ Replied PONG to user: ${userId}`);
+        } else {
+          await client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: `✅ ได้รับข้อความของคุณ: "${text}"`
+          });
+          console.log(`✅ Replied to message from user: ${userId}`);
+        }
       } else if (event.type === 'follow') {
         const userId = event.source.userId;
         console.log(`🎉 User ${userId} added the bot as a friend`);
