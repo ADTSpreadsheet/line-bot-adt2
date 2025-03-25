@@ -177,41 +177,70 @@ app.post('/webhook2', async (req, res) => {
       }
     }
 
-    res.status(200).json({ success: true, message: "Registration successful", expires_at: expiresDate.toISOString() });
-  } catch (error) {
-    console.error("❌ Unexpected error in /webhook2:", error);
-    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    // ✅ LINE Webhook to capture "follow" events
+app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
+  console.log("📲 Bot 2 Webhook triggered");
+  console.log("Full webhook payload:", JSON.stringify(req.body, null, 2));
+  res.status(200).end();
+
+  const events = req.body.events;
+  if (!Array.isArray(events)) {
+    console.log("❌ No events array found");
+    return;
+  }
+
+  events.forEach(event => {
+    console.log("🔍 Detailed Event Logging:");
+    console.log("Event Type:", event.type);
+    console.log("Event Source:", JSON.stringify(event.source, null, 2));
+  });
+
+  for (const event of events) {
+    if (event.type === 'follow') {
+      const userId = event.source.userId;
+      
+      // เพิ่ม logging ที่ละเอียดมากขึ้น
+      console.log(`🎉 IMPORTANT: New User Added Bot as Friend`);
+      console.log(`=============================================`);
+      console.log(`📱 LINE USER ID: ${userId}`);
+      console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+      console.log(`=============================================`);
+
+      try {
+        // ส่งข้อความต้อนรับ
+        await lineClient.pushMessage(userId, {
+          type: 'text',
+          text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
+        });
+
+        // เพิ่มการบันทึกข้อมูลผู้ใช้ลงใน Supabase
+        const registrationData = {
+          line_user_id: userId,
+          registered_at: new Date().toISOString(),
+          status: 'ACTIVE'
+        };
+
+        const { data, error } = await supabase
+          .from('line_users')
+          .insert([registrationData])
+          .select();
+
+        if (error) {
+          console.error('❌ Failed to save user to Supabase:', error);
+        } else {
+          console.log('✅ User saved to Supabase:', data);
+        }
+
+      } catch (err) {
+        console.error("❌ Failed to process follow event:", {
+          userId: userId,
+          errorMessage: err.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
   }
 });
-
-// ตรวจสอบ env
-app.get('/check-env', (req, res) => {
-  const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-  res.json({
-    lineTokenExists: Boolean(lineToken),
-    lineTokenLength: lineToken ? lineToken.length : 0,
-    adminLineUserId: process.env.ADMIN_LINE_USER_ID || 'Not set (using default)'
-  });
-});
-
-// ตรวจสอบโควตาการส่งข้อความ
-app.get('/check-quota', async (req, res) => {
-  try {
-    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-    if (!token) {
-      return res.status(400).json({ success: false, message: "LINE_CHANNEL_ACCESS_TOKEN is not set" });
-    }
-    
-    const response = await axios.get('https://api.line.me/v2/bot/message/quota', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    res.json({
-      success: true,
-      quota: response.data
-    });
   } catch (error) {
     res.status(500).json({
       success: false,
