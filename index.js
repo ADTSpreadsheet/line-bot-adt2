@@ -117,9 +117,6 @@ app.post('/webhook2', async (req, res) => {
         message: "Reference Code is required" 
       });
     }
-
-    ...
-
     
     const now = new Date();
     const expiresDate = new Date(now);
