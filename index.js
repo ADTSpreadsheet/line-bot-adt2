@@ -180,33 +180,38 @@ console.log("✅ Registration saved in Supabase:", data);
 
     // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
 app.post('/dashboard-access', async (req, res) => {
-  const { ref_code } = req.body;
+  try {
+    const { ref_code } = req.body;
 
-  if (!ref_code) {
-    return res.status(400).json({ success: false, message: "Missing ref_code" });
+    if (!ref_code) {
+      return res.status(400).json({ success: false, message: "Missing ref_code" });
+    }
+
+    const timestamp = new Date();
+    const formattedDate = timestamp.toLocaleDateString("th-TH", {
+      day: "2-digit", month: "2-digit", year: "numeric"
+    });
+    const formattedTime = timestamp.toLocaleTimeString("th-TH", {
+      hour: "2-digit", minute: "2-digit"
+    });
+
+    const notifyMessage =
+      `✅ ผู้ใช้ Ref.Code : ${ref_code} ลงทะเบียนสำเร็จ\n` +
+      `✅ สามารถเข้าสู่ Dashboard สำเร็จ\n` +
+      `🕒 เวลา ${formattedDate} ${formattedTime}`;
+
+    console.log("📘 Notify:", notifyMessage);
+
+    // พี่จะส่งไป LINE ก็ใส่ตรงนี้เพิ่มได้ทีหลัง
+
+    return res.status(200).json({ success: true, message: "Dashboard access logged" });
+
+  } catch (error) {
+    console.error("❌ Error in /dashboard-access:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
-
-  const timestamp = new Date();
-  const formattedDate = timestamp.toLocaleDateString("th-TH", {
-    day: "2-digit", month: "2-digit", year: "numeric"
-  });
-  const formattedTime = timestamp.toLocaleTimeString("th-TH", {
-    hour: "2-digit", minute: "2-digit"
-  });
-
-  const notifyMessage =
-    `✅ผู้ใช้ Ref.Code : ${ref_code} ลงทะเบียนสำเร็จ\n` +
-    `✅สามารถเข้าสู่ Dashboard สำเร็จ\n` +
-    `🕒 เวลา ${formattedDate} ${formattedTime}`;
-
-  console.log("📲 Notify:", notifyMessage);
-  
-  // TODO: ส่ง notifyMessage ไปยัง LINE Notify หรือช่องทางที่ต้องการ
-
-  return res.status(200).json({ success: true, message: "Dashboard access logged" });
 });
-
-
+    
   const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID;
 
   try {
