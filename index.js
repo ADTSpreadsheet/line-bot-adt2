@@ -350,4 +350,56 @@ app.get('/test-direct-line-message', async (req, res) => {
   } catch (error) {
     console.error("❌ Direct send error:", error);
     res.status(500).json({
-      success
+      success: false,
+      message: error.message,
+      details: error.response?.data || null
+    });
+  }
+});
+
+// Endpoint สำหรับตรวจสอบผู้ใช้
+app.get('/verify-user/:userId', async (req, res) => {
+  try {
+    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    if (!token) {
+      return res.status(400).json({ success: false, message: "LINE_CHANNEL_ACCESS_TOKEN is not set" });
+    }
+    
+    const userId = req.params.userId;
+    
+    try {
+      // พยายามดึงข้อมูลโปรไฟล์ของผู้ใช้
+      const profileResponse = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      res.json({
+        success: true,
+        valid: true,
+        profile: profileResponse.data
+      });
+    } catch (profileError) {
+      // หากไม่สามารถดึงข้อมูลได้ อาจเป็นเพราะผู้ใช้ไม่มีอยู่หรือไม่ได้เพิ่ม bot เป็นเพื่อน
+      res.json({
+        success: true,
+        valid: false,
+        message: "User ID is invalid or user has not added the bot as a friend",
+        details: profileError.response?.data || null
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// เริ่มเซิร์ฟเวอร์
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  updateExpiredRegistrations();
+});
