@@ -85,14 +85,18 @@ app.post('/webhook', lineMiddleware, (req, res) => {
   }
 });
 
-// Excel VBA Webhook Route
 app.post('/webhook2', async (req, res) => {
+  // 🛡️ LINE Developer อาจยิง payload test ที่ไม่มี ref_code กับ machine_id
+  if (!req.body.ref_code && !req.body.machine_id && req.body.destination && Array.isArray(req.body.events)) {
+    console.log("🟡 Received test webhook from LINE Developer. Sending 200 OK.");
+    return res.status(200).send("OK");
+  }
+
   try {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
-    
+
     const { 
       ref_code, 
-      // line_user_id ถูกลบออก
       first_name, 
       last_name, 
       house_number, 
@@ -104,8 +108,8 @@ app.post('/webhook2', async (req, res) => {
       ip_address,
       machine_id 
     } = req.body;
-    
-    // Validate required fields
+
+    // 🔐 เงื่อนไขเดิม ใช้กับกรณี Excel VBA เท่านั้น
     if (!ref_code) {
       console.log("❌ Missing required field: ref_code");
       return res.status(400).json({ 
@@ -113,6 +117,9 @@ app.post('/webhook2', async (req, res) => {
         message: "Reference Code is required" 
       });
     }
+
+    ...
+
     
     const now = new Date();
     const expiresDate = new Date(now);
