@@ -409,7 +409,6 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   }
 });
 
-
     res.json({ success: true, result: result.data });
   } catch (error) {
     console.error("❌ Direct send error:", error);
