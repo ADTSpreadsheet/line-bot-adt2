@@ -177,7 +177,7 @@ app.post('/webhook2', async (req, res) => {
       }
     }
 
-    // ✅ LINE Webhook to capture "follow" events
+    // ✅ LINE Webhook to capture multiple events
 app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   console.log("📲 Bot 2 Webhook triggered");
   console.log("Full webhook payload:", JSON.stringify(req.body, null, 2));
@@ -189,55 +189,133 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
     return;
   }
 
-  events.forEach(event => {
-    console.log("🔍 Detailed Event Logging:");
-    console.log("Event Type:", event.type);
-    console.log("Event Source:", JSON.stringify(event.source, null, 2));
-  });
-
   for (const event of events) {
-    if (event.type === 'follow') {
-      const userId = event.source.userId;
-      
-      // เพิ่ม logging ที่ละเอียดมากขึ้น
-      console.log(`🎉 IMPORTANT: New User Added Bot as Friend`);
-      console.log(`=============================================`);
-      console.log(`📱 LINE USER ID: ${userId}`);
-      console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
-      console.log(`=============================================`);
+    switch(event.type) {
+      case 'follow':
+        const followUserId = event.source.userId;
+        
+        console.log(`🟢 FOLLOW EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${followUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        console.log(`=============================================`);
 
-      try {
-        // ส่งข้อความต้อนรับ
-        await lineClient.pushMessage(userId, {
-          type: 'text',
-          text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
-        });
+        try {
+          await lineClient.pushMessage(followUserId, {
+            type: 'text',
+            text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
+          });
 
-        // เพิ่มการบันทึกข้อมูลผู้ใช้ลงใน Supabase
-        const registrationData = {
-          line_user_id: userId,
-          registered_at: new Date().toISOString(),
-          status: 'ACTIVE'
-        };
+          const followRegistrationData = {
+            line_user_id: followUserId,
+            registered_at: new Date().toISOString(),
+            status: 'ACTIVE'
+          };
 
-        const { data, error } = await supabase
-          .from('line_users')
-          .insert([registrationData])
-          .select();
+          const { data, error } = await supabase
+            .from('line_users')
+            .insert([followRegistrationData])
+            .select();
 
-        if (error) {
-          console.error('❌ Failed to save user to Supabase:', error);
-        } else {
-          console.log('✅ User saved to Supabase:', data);
+          if (error) {
+            console.error('❌ Failed to save user to Supabase:', error);
+          } else {
+            console.log('✅ User saved to Supabase:', data);
+          }
+        } catch (err) {
+          console.error("❌ Failed to process follow event:", {
+            userId: followUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
         }
+        break;
 
-      } catch (err) {
-        console.error("❌ Failed to process follow event:", {
-          userId: userId,
-          errorMessage: err.message,
-          timestamp: new Date().toISOString()
-        });
-      }
+      case 'unfollow':
+        const unfollowUserId = event.source.userId;
+        
+        console.log(`🔴 UNFOLLOW EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${unfollowUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        console.log(`=============================================`);
+
+        try {
+          const { data, error } = await supabase
+            .from('line_users')
+            .update({ status: 'INACTIVE' })
+            .eq('line_user_id', unfollowUserId);
+
+          if (error) {
+            console.error('❌ Failed to update user status:', error);
+          } else {
+            console.log('✅ User status updated to INACTIVE');
+          }
+        } catch (err) {
+          console.error("❌ Failed to process unfollow event:", {
+            userId: unfollowUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        break;
+
+      case 'message':
+        const messageUserId = event.source.userId;
+        
+        console.log(`💬 MESSAGE EVENT`);
+        console.log(`=============================================`);
+        console.log(`📱 LINE USER ID: ${messageUserId}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        
+        // ตรวจสอบประเภทของข้อความ
+        if (event.message.type === 'text') {
+          console.log(`📝 Message Type: Text`);
+          console.log(`📄 Message Content: ${event.message.text}`);
+        } else if (event.message.type === 'sticker') {
+          console.log(`🌈 Message Type: Sticker`);
+          console.log(`🆔 Sticker ID: ${event.message.stickerId}`);
+          console.log(`📦 Sticker Package ID: ${event.message.packageId}`);
+        } else {
+          console.log(`📌 Message Type: ${event.message.type}`);
+        }
+        
+        console.log(`=============================================`);
+
+        // เพิ่มการบันทึกข้อความลงใน Supabase หากต้องการ
+        try {
+          const messageData = {
+            line_user_id: messageUserId,
+            message_type: event.message.type,
+            message_content: event.message.type === 'text' ? event.message.text : 
+                             event.message.type === 'sticker' ? `Sticker: ${event.message.stickerId}` : 'Other',
+            received_at: new Date().toISOString()
+          };
+
+          const { data, error } = await supabase
+            .from('line_messages')
+            .insert([messageData])
+            .select();
+
+          if (error) {
+            console.error('❌ Failed to save message to Supabase:', error);
+          } else {
+            console.log('✅ Message saved to Supabase:', data);
+          }
+        } catch (err) {
+          console.error("❌ Failed to process message event:", {
+            userId: messageUserId,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        break;
+
+      default:
+        console.log(`📌 Other event type: ${event.type}`);
+        console.log(`📱 User ID: ${event.source?.userId || 'N/A'}`);
+        console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+        break;
     }
   }
 });
