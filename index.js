@@ -409,49 +409,6 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   }
 });
 
-// ทดสอบส่งข้อความด้วยข้อความสั้นๆ 
-app.get('/test-minimal-message', async (req, res) => {
-  try {
-    const userId = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
-    await sendMessageToLineBot2("Test", userId);
-    res.send("✅ Minimal message sent successfully");
-  } catch (error) {
-    console.error("❌ Error sending minimal message:", error);
-    res.status(500).send(`Error: ${error.message}`);
-  }
-});
-
-// ทดสอบส่งข้อความผ่านฟังก์ชันหลัก
-app.get('/test-line-message', async (req, res) => {
-  try {
-    const message = 'ทดสอบส่งข้อความ';
-    const userId = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
-    await sendMessageToLineBot2(message, userId);
-    res.send("✅ Message sent successfully");
-  } catch (error) {
-    console.error("❌ Error sending test message:", error);
-    res.status(500).send(`Error: ${error.message}`);
-  }
-});
-
-// ทดสอบส่งแบบไม่ผ่านฟังก์ชันกลาง
-app.get('/test-direct-line-message', async (req, res) => {
-  try {
-    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-    const userId = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
-    const testMessage = 'ทดสอบส่งตรง';
-
-    const result = await axios.post('https://api.line.me/v2/bot/message/push', {
-      to: userId,
-      messages: [
-        { type: 'text', text: testMessage }
-      ]
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
 
     res.json({ success: true, result: result.data });
   } catch (error) {
