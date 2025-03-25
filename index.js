@@ -179,7 +179,7 @@ console.log("✅ Registration saved in Supabase:", data);
 });
 
 // ✅ Endpoint สำหรับรับการแจ้งเตือนการเข้า Dashboard
-app.post('/dashboard-access', async (req, res) => {
+app.post('/webhook2', async (req, res) => {
   try {
     console.log("📥 Received dashboard access notification");
     const { ref_code } = req.body;
