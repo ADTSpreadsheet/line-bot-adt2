@@ -178,8 +178,10 @@ console.log("✅ Registration saved in Supabase:", data);
   ref_code: ref_code 
 });
 
-   // เพิ่ม endpoint ใหม่สำหรับรายงานการเข้า Dashboard
 app.post('/dashboard-access', async (req, res) => {
+  console.log("📣 Dashboard Access endpoint called");
+  console.log("📦 Request body:", JSON.stringify(req.body, null, 2));
+  
   try {
     const { ref_code } = req.body;
     
