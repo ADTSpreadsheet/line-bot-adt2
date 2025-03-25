@@ -200,22 +200,26 @@ app.post('/dashboard-access', async (req, res) => {
       `✅ สามารถเข้าสู่ Dashboard สำเร็จ\n` +
       `🕒 เวลา ${formattedDate} ${formattedTime}`;
 
-    console.log("📘 Notify:", notifyMessage);
+   console.log("📘 Notify:", notifyMessage);
 
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
+// ✅ ส่ง LINE Notify
+const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
 
-    try {
-      await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
-    } catch (lineError) {
-      console.error("⚠️ Could not send LINE notification:", lineError.message);
-      if (lineError.response) {
-        console.error("Error details:", {
-          status: lineError.response.status,
-          statusText: lineError.response.statusText,
-          data: lineError.response.data
-        });
-      }
-    }
+try {
+  console.log("📤 Sending LINE Notify message to:", lineUserIdToNotify);
+  console.log("📨 Message:", notifyMessage);
+  await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
+  console.log("✅ LINE Notify sent successfully!");
+} catch (lineError) {
+  console.error("❌ LINE Notify Error:", lineError.message);
+  if (lineError.response) {
+    console.error("🧾 LINE API Response:", {
+      status: lineError.response.status,
+      data: lineError.response.data
+    });
+  }
+}
+
 
     return res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
 
