@@ -377,6 +377,10 @@ async function sendMessageToLineBot2(message, userId) {
   }
 }
 
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // Server startup
 app.listen(PORT, () => {
   console.log(`✅ LINE Bot 2 is running on port ${PORT}`);
