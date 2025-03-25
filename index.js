@@ -178,63 +178,58 @@ console.log("✅ Registration saved in Supabase:", data);
   ref_code: ref_code 
 });
 
-   // ✅ Endpoint สำหรับตรวจสอบการเข้าถึง Dashboard
-app.post('/dashboard-access-check', async (req, res) => {
-  // เพิ่ม logging ข้อมูลที่ได้รับ
-  console.log("📥 Received dashboard access check request:");
-  console.log("📦 Request body:", JSON.stringify(req.body, null, 2));
-  
+   app.post('/webhook2', async (req, res) => {
   try {
-    const { ref_code, dashboard_active } = req.body;
+    console.log("📥 Received data from VBA:", JSON.stringify(req.body, null, 2));
     
-    // ตรวจสอบพารามิเตอร์
-    if (!ref_code) {
-      console.log("❌ Missing ref_code in request");
-      return res.status(400).json({ success: false, message: "Missing ref_code" });
-    }
-    
-    // ตอบกลับสถานะ 200 ทันที
-    console.log("✅ Sending response 200 OK");
-    res.status(200).json({ success: true, message: "Dashboard access received" });
-    
-    // ส่งข้อความแจ้งเตือน
-    const timestamp = new Date();
-    const formattedDate = timestamp.toLocaleDateString("th-TH", {
-      day: "2-digit", month: "2-digit", year: "numeric"
-    });
-    const formattedTime = timestamp.toLocaleTimeString("th-TH", {
-      hour: "2-digit", minute: "2-digit"
-    });
-    
-    const notifyMessage =
-      `✅ ผู้ใช้ Ref.Code : ${ref_code} กำลังใช้งานระบบ\n` +
-      `✅ สถานะ: ${dashboard_active ? 'เข้าใช้งาน Dashboard' : 'ไม่ได้อยู่ที่ Dashboard'}\n` +
-      `📅 วันที่ ${formattedDate}\n` +
-      `🕒 เวลา ${formattedTime}`;
+    // เช็คว่ามีเฉพาะ ref_code และ dashboard_active มาหรือไม่
+    if (req.body.ref_code && req.body.dashboard_active === true && Object.keys(req.body).length === 2) {
+      console.log("📌 Dashboard Access Report: ref_code=" + req.body.ref_code);
       
-    console.log("📝 Preparing notification message:", notifyMessage);
-    
-    // ✅ ส่ง LINE Notify
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
-    try {
-      console.log("📤 Sending LINE Notify to:", lineUserIdToNotify);
-      await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
-      console.log("✅ LINE Notify sent successfully!");
-    } catch (lineError) {
-      console.error("❌ LINE Notify Error:", lineError.message);
-      if (lineError.response) {
-        console.error("🧾 LINE API Response:", {
-          status: lineError.response.status,
-          data: lineError.response.data
-        });
+      // ตอบกลับ 200 ทันที
+      res.status(200).json({ success: true, message: "Dashboard access recorded" });
+      
+      // ส่งข้อความแจ้งเตือน
+      const timestamp = new Date();
+      const formattedDate = timestamp.toLocaleDateString("th-TH", { 
+        day: "2-digit", month: "2-digit", year: "numeric" 
+      });
+      const formattedTime = timestamp.toLocaleTimeString("th-TH", { 
+        hour: "2-digit", minute: "2-digit" 
+      });
+      
+      const notifyMessage = 
+        `✅ ผู้ใช้ Ref.Code: ${req.body.ref_code}\n` +
+        `✅ กำลังใช้งาน Dashboard อยู่\n` +
+        `📅 วันที่ ${formattedDate}\n` +
+        `🕒 เวลา ${formattedTime}`;
+      
+      try {
+        const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
+        await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
+        console.log("✅ LINE notification sent for Dashboard access");
+      } catch (lineError) {
+        console.error("❌ LINE notification error:", lineError.message);
       }
+      
+      return; // จบการทำงาน
     }
+    
+    // ถ้าไม่ใช่การแจ้ง Dashboard ให้ดำเนินการลงทะเบียนตามปกติ
+    const { ref_code, machine_id, first_name, last_name, house_number, district, province, phone_number, email, national_id, ip_address } = req.body;
+
+    // ตรวจสอบ ref_code
+    if (!ref_code) {
+      console.log("❌ Missing required field: ref_code");
+      return res.status(400).json({ success: false, message: "Reference Code is required" });
+    }
+
+    // ทำงานตามปกติต่อไป...
+    // เตรียมข้อมูล, บันทึกข้อมูล, ฯลฯ
     
   } catch (error) {
-    console.error("❌ Error in /dashboard-access-check:", error.message);
-    if (!res.headersSent) {
-      return res.status(500).json({ success: false, message: "Server error" });
-    }
+    console.error("❌ Error in webhook2:", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
     // ✅ LINE Webhook to capture multiple events
