@@ -2,6 +2,7 @@
 const express = require('express');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
+const line = require('@line/bot-sdk');
 require('dotenv').config();
 
 // กำหนดค่า Express
@@ -12,6 +13,15 @@ app.use(express.json());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// กำหนดค่าคอนฟิก LINE Bot
+const lineConfig = {
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET
+};
+
+// สร้าง LINE client
+const lineClient = new line.Client(lineConfig);
 
 // เพิ่มฟังก์ชันสำหรับหน่วงเวลา
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -152,7 +162,6 @@ app.post('/webhook2', async (req, res) => {
     const message = `ลงทะเบียนสำเร็จ: ${ref_code} (${formattedDate} ${formattedTime})`;
     
     // ดึงค่า LINE User ID จาก Environment หรือใช้ค่า default
-    // ตรวจสอบและใช้ตัวแปรที่ถูกกำหนดไว้ในไฟล์ .env ก่อน
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
 
     try {
@@ -251,19 +260,47 @@ app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
   for (const event of events) {
     if (event.type === 'follow') {
       const userId = event.source.userId;
-      console.log(`🎉 User added Bot2 as a friend. LINE User ID: ${userId}`);
+      
+      // บันทึก LINE User ID ลงใน log
+      console.log(`🎉 User added Bot2 as a friend. 
+      LINE User ID: ${userId}
+      Event Timestamp: ${new Date().toISOString()}`);
+
       try {
+        // ส่งข้อความต้อนรับ
         await lineClient.pushMessage(userId, {
           type: 'text',
           text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
         });
+
+        // เพิ่มการบันทึกข้อมูลผู้ใช้ลงใน Supabase
+        const registrationData = {
+          line_user_id: userId,
+          registered_at: new Date().toISOString(),
+          status: 'ACTIVE'
+        };
+
+        const { data, error } = await supabase
+          .from('line_users')
+          .insert([registrationData])
+          .select();
+
+        if (error) {
+          console.error('❌ Failed to save user to Supabase:', error);
+        } else {
+          console.log('✅ User saved to Supabase:', data);
+        }
+
       } catch (err) {
-        console.error("❌ Failed to send welcome message:", err.message);
+        console.error("❌ Failed to process follow event:", {
+          userId: userId,
+          errorMessage: err.message,
+          timestamp: new Date().toISOString()
+        });
       }
     }
   }
 });
-
 
 // ทดสอบส่งข้อความด้วยข้อความสั้นๆ 
 app.get('/test-minimal-message', async (req, res) => {
@@ -313,56 +350,4 @@ app.get('/test-direct-line-message', async (req, res) => {
   } catch (error) {
     console.error("❌ Direct send error:", error);
     res.status(500).json({
-      success: false,
-      message: error.message,
-      details: error.response?.data || null
-    });
-  }
-});
-
-// Endpoint สำหรับตรวจสอบผู้ใช้
-app.get('/verify-user/:userId', async (req, res) => {
-  try {
-    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-    if (!token) {
-      return res.status(400).json({ success: false, message: "LINE_CHANNEL_ACCESS_TOKEN is not set" });
-    }
-    
-    const userId = req.params.userId;
-    
-    try {
-      // พยายามดึงข้อมูลโปรไฟล์ของผู้ใช้
-      const profileResponse = await axios.get(`https://api.line.me/v2/bot/profile/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      res.json({
-        success: true,
-        valid: true,
-        profile: profileResponse.data
-      });
-    } catch (profileError) {
-      // หากไม่สามารถดึงข้อมูลได้ อาจเป็นเพราะผู้ใช้ไม่มีอยู่หรือไม่ได้เพิ่ม bot เป็นเพื่อน
-      res.json({
-        success: true,
-        valid: false,
-        message: "User ID is invalid or user has not added the bot as a friend",
-        details: profileError.response?.data || null
-      });
-    }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// เริ่มเซิร์ฟเวอร์
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  updateExpiredRegistrations();
-});
+      success
