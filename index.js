@@ -178,15 +178,20 @@ console.log("✅ Registration saved in Supabase:", data);
   ref_code: ref_code 
 });
 
-    // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
-app.post('/dashboard-access', async (req, res) => {
+   // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
+app.post('/dashboard-access-check', async (req, res) => {
   try {
-    const { ref_code } = req.body;
-
-    if (!ref_code) {
-      return res.status(400).json({ success: false, message: "Missing ref_code" });
+    const { ref_code, dashboard_active } = req.body;
+    
+    // ตรวจสอบว่ามี ref_code และ dashboard_active
+    if (!ref_code || dashboard_active !== true) {
+      return res.status(400).json({ success: false, message: "Missing ref_code or dashboard_active is not true" });
     }
-
+    
+    // ตอบกลับสถานะ 200 ทันที
+    res.status(200).json({ success: true, message: "Dashboard access confirmed" });
+    
+    // หลังจากตอบกลับแล้ว จึงค่อยทำการส่งแจ้งเตือน
     const timestamp = new Date();
     const formattedDate = timestamp.toLocaleDateString("th-TH", {
       day: "2-digit", month: "2-digit", year: "numeric"
@@ -194,41 +199,40 @@ app.post('/dashboard-access', async (req, res) => {
     const formattedTime = timestamp.toLocaleTimeString("th-TH", {
       hour: "2-digit", minute: "2-digit"
     });
-
+    
     const notifyMessage =
-      `✅ ผู้ใช้ Ref.Code : ${ref_code} ลงทะเบียนสำเร็จ\n` +
-      `✅ สามารถเข้าสู่ Dashboard สำเร็จ\n` +
-      `🕒 เวลา ${formattedDate} ${formattedTime}`;
-
-   console.log("📘 Notify:", notifyMessage);
-
-// ✅ ส่ง LINE Notify
-const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
-
-try {
-  console.log("📤 Sending LINE Notify message to:", lineUserIdToNotify);
-  console.log("📨 Message:", notifyMessage);
-  await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
-  console.log("✅ LINE Notify sent successfully!");
-} catch (lineError) {
-  console.error("❌ LINE Notify Error:", lineError.message);
-  if (lineError.response) {
-    console.error("🧾 LINE API Response:", {
-      status: lineError.response.status,
-      data: lineError.response.data
-    });
-  }
-}
-
-
-    return res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
-
+      `✅ ผู้ใช้ Ref.Code : ${ref_code} กำลังใช้งานระบบ\n` +
+      `✅ สถานะ: เข้าใช้งาน Dashboard อยู่\n` +
+      `📅 วันที่ ${formattedDate}\n` +
+      `🕒 เวลา ${formattedTime}`;
+      
+    console.log("📘 Notify:", notifyMessage);
+    
+    // ✅ ส่ง LINE Notify
+    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
+    try {
+      console.log("📤 Sending LINE Notify message to:", lineUserIdToNotify);
+      console.log("📨 Message:", notifyMessage);
+      await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
+      console.log("✅ LINE Notify sent successfully!");
+    } catch (lineError) {
+      console.error("❌ LINE Notify Error:", lineError.message);
+      if (lineError.response) {
+        console.error("🧾 LINE API Response:", {
+          status: lineError.response.status,
+          data: lineError.response.data
+        });
+      }
+    }
+    
   } catch (error) {
-    console.error("❌ Error in /dashboard-access:", error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("❌ Error in /dashboard-access-check:", error.message);
+    // ถ้ายังไม่ได้ส่งการตอบกลับ (เกิด error ก่อนตอบกลับ)
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, message: "Server error" });
+    }
   }
 });
-
 
     // ✅ LINE Webhook to capture multiple events
 app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
