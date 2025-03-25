@@ -172,7 +172,11 @@ if (error) {
 }
 
 console.log("✅ Registration saved in Supabase:", data);
-
+    return res.status(200).json({ 
+  success: true, 
+  message: "Registration successful", 
+  ref_code: ref_code 
+});
 
     // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
 app.post('/dashboard-access', async (req, res) => {
