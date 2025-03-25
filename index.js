@@ -140,31 +140,39 @@ app.post('/webhook2', async (req, res) => {
     const expiresDate = new Date(now);
     expiresDate.setDate(now.getDate() + 7);
 
-    const registrationData = {
-      ref_code,
-      machine_id: machine_id || null,
-      first_name: first_name || null,
-      last_name: last_name || null,
-      house_number: house_number || null,
-      district: district || null,
-      province: province || null,
-      phone_number: phone_number || null,
-      email: email || null,
-      national_id: national_id || null,
-      ip_address: ip_address || null,
-      day_created_at: now.toISOString(),
-      verify_at: now.toISOString(),
-      expires_at: expiresDate.toISOString(),
-      status: 'ACTIVE'
-    };
+    console.log("🧱 Preparing registrationData...");
 
-    const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
-    if (error) {
-      console.error("❌ Supabase insert error:", error);
-      return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
-    }
+const registrationData = {
+  ref_code,
+  machine_id: machine_id || null,
+  first_name: first_name || null,
+  last_name: last_name || null,
+  house_number: house_number || null,
+  district: district || null,
+  province: province || null,
+  phone_number: phone_number || null,
+  email: email || null,
+  national_id: national_id || null,
+  ip_address: ip_address || null,
+  day_created_at: now.toISOString(),
+  verify_at: now.toISOString(),
+  expires_at: expiresDate.toISOString(),
+  status: 'ACTIVE'
+};
 
-    console.log("✅ Registration saved in Supabase:", data);
+console.log("📦 Prepared registrationData:", registrationData);
+
+const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
+
+console.log("📤 Sending to Supabase...");
+
+if (error) {
+  console.error("❌ Supabase insert error:", error);
+  return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
+}
+
+console.log("✅ Registration saved in Supabase:", data);
+
 
     // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
 app.post('/dashboard-access', async (req, res) => {
