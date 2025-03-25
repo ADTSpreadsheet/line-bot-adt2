@@ -1,4 +1,17 @@
+// เพิ่มการนำเข้าแพ็คเกจที่จำเป็น
+const express = require('express');
 const axios = require('axios');
+const cron = require('node-cron');
+const { createClient } = require('@supabase/supabase-js');
+
+// กำหนดค่า Express
+const app = express();
+app.use(express.json());
+
+// กำหนดค่า Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ฟังก์ชันสำหรับส่งข้อความไปยัง LINE
 async function sendMessageToLineBot2(message, userId) {
@@ -128,9 +141,6 @@ app.post('/webhook2', async (req, res) => {
 });
 
 // เพิ่ม Cron job เพื่ออัปเดตสถานะการลงทะเบียนที่หมดอายุเป็น 'BLOCK'
-// รันทุกวันเวลาเที่ยงคืน
-const cron = require('node-cron');
-
 cron.schedule('0 0 * * *', async () => {
   console.log('🕒 Running scheduled task: Updating expired registrations');
   try {
@@ -152,4 +162,15 @@ cron.schedule('0 0 * * *', async () => {
   } catch (error) {
     console.error('❌ Error in scheduled task:', error);
   }
+});
+
+// กำหนด route อื่นๆ ที่จำเป็น
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
+
+// เริ่มต้น server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
