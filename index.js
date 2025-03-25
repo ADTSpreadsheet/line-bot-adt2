@@ -1,7 +1,6 @@
 // เพิ่มการนำเข้าแพ็คเกจที่จำเป็น
 const express = require('express');
 const axios = require('axios');
-const cron = require('node-cron');
 const { createClient } = require('@supabase/supabase-js');
 
 // กำหนดค่า Express
@@ -40,6 +39,30 @@ async function sendMessageToLineBot2(message, userId) {
       console.error(`Error details: ${JSON.stringify(error.response.data)}`);
     }
     throw error; // Re-throw to be caught by the caller
+  }
+}
+
+// ฟังก์ชันสำหรับอัปเดตสถานะการลงทะเบียนที่หมดอายุ
+async function updateExpiredRegistrations() {
+  console.log('🕒 Running task: Updating expired registrations');
+  try {
+    const now = new Date().toISOString();
+    
+    // อัปเดตสถานะของการลงทะเบียนที่หมดอายุ
+    const { data, error } = await supabase
+      .from('user_registrations')
+      .update({ status: 'BLOCK' })
+      .match({ status: 'ACTIVE' })
+      .lt('expires_at', now);
+    
+    if (error) {
+      console.error('❌ Failed to update expired registrations:', error);
+      return;
+    }
+    
+    console.log(`✅ Updated status to BLOCK for ${data?.length || 0} expired registrations`);
+  } catch (error) {
+    console.error('❌ Error in task:', error);
   }
 }
 
@@ -122,7 +145,6 @@ app.post('/webhook2', async (req, res) => {
       } else {
         console.error("Error details:", lineError);
       }
-      // ไม่ return error response เพื่อให้การลงทะเบียนยังสำเร็จแม้ว่าการส่ง LINE จะล้มเหลว
     }
     
     res.status(200).json({ 
@@ -140,27 +162,21 @@ app.post('/webhook2', async (req, res) => {
   }
 });
 
-// เพิ่ม Cron job เพื่ออัปเดตสถานะการลงทะเบียนที่หมดอายุเป็น 'BLOCK'
-cron.schedule('0 0 * * *', async () => {
-  console.log('🕒 Running scheduled task: Updating expired registrations');
+// เพิ่ม endpoint สำหรับการอัปเดตสถานะการลงทะเบียนที่หมดอายุ
+app.post('/update-expired-registrations', async (req, res) => {
   try {
-    const now = new Date().toISOString();
-    
-    // อัปเดตสถานะของการลงทะเบียนที่หมดอายุ
-    const { data, error } = await supabase
-      .from('user_registrations')
-      .update({ status: 'BLOCK' })
-      .match({ status: 'ACTIVE' })
-      .lt('expires_at', now);
-    
-    if (error) {
-      console.error('❌ Failed to update expired registrations:', error);
-      return;
-    }
-    
-    console.log(`✅ Updated status to BLOCK for ${data?.length || 0} expired registrations`);
+    await updateExpiredRegistrations();
+    res.status(200).json({
+      success: true,
+      message: "Update process completed"
+    });
   } catch (error) {
-    console.error('❌ Error in scheduled task:', error);
+    console.error('❌ Error in update process:', error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 });
 
@@ -173,4 +189,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  
+  // อัปเดตสถานะการลงทะเบียนที่หมดอายุเมื่อเริ่มต้น server
+  updateExpiredRegistrations();
 });
