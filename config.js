@@ -1,6 +1,6 @@
 module.exports = {
   lineBot2: {
-    accessToken: "VcdMebbh7xEnFBj3t58u/vjAOfjBbrelQs0pLGPTUmvrc3wHYjyWhAA98hy/SkWE1Tj4HjRxMzQu0V9eFYXH78QVYfxLftp6uqyzZsLACPZMbXIkjxqyqJPVYbcg507U3TwgUjZh+Y/7zpy/IzmZpQdB04t89/1O/w1cDnyilFU=",
+    accessToken: "pkTLXAp+M+m+7wZ+Wx1j8PzpzN7wpH9UWaPtosU6utEdmQylQjxIalKVX4kPqhTU1Tj4HjRxMzQu0V9eFYXH78QVYfxLftp6uqyzZsLACPb41tdH7MDARHoFBn/QAlLaoQ+PAwOU5tpKXJ6Iq+fWaQdB04t89/1O/w1cDnyilFU=",
     channelSecret: "3558642df20f8e7e357c70c5ffd826f4",
   },
   adminUserId: "Ub7406c5f05771fb36c32c1b1397539f6",
