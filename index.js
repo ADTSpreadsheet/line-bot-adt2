@@ -166,10 +166,35 @@ app.post('/webhook2', async (req, res) => {
 
     console.log("✅ Registration saved in Supabase:", data);
 
-    const formattedDate = now.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const formattedTime = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-    const message = `ลงทะเบียนสำเร็จ: ${ref_code} (${formattedDate} ${formattedTime})`;
-    
+    // ✅ Endpoint ที่รอรับสัญญาณจาก VBA ว่าผู้ใช้เข้า Dashboard สำเร็จ
+app.post('/dashboard-access', async (req, res) => {
+  const { ref_code, machine_id } = req.body;
+
+  if (!ref_code || !machine_id) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  const timestamp = new Date();
+  const formattedDate = timestamp.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const formattedTime = timestamp.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+
+  const notifyMessage =
+    `✅ผู้ใช้ Ref.Code : ${ref_code} ลงทะเบียนสำเร็จ\n` +
+    `✅สามารถเข้าสู่ Dashboard สำเร็จ\n` +
+    `🕒 เวลา ${formattedDate} ${formattedTime}`;
+
+  const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID;
+
+  try {
+    await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
+    console.log(`📬 Sent dashboard access confirmation for ${ref_code} at ${formattedDate} ${formattedTime}`);
+    res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
+  } catch (error) {
+    console.error("❌ Failed to send dashboard access message:", error.message);
+    res.status(500).json({ success: false, message: "Failed to send LINE message" });
+  }
+});
+
     // ดึงค่า LINE User ID จาก Environment หรือใช้ค่า default
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
 
