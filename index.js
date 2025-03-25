@@ -240,6 +240,31 @@ app.get('/channel-status', async (req, res) => {
   }
 });
 
+// ✅ LINE Webhook to capture "follow" events
+app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
+  console.log("📲 Bot 2 Webhook triggered");
+  res.status(200).end();
+
+  const events = req.body.events;
+  if (!Array.isArray(events)) return;
+
+  for (const event of events) {
+    if (event.type === 'follow') {
+      const userId = event.source.userId;
+      console.log(`🎉 User added Bot2 as a friend. LINE User ID: ${userId}`);
+      try {
+        await lineClient.pushMessage(userId, {
+          type: 'text',
+          text: 'ขอบคุณที่เพิ่มเราเป็นเพื่อน! ยินดีต้อนรับสู่ระบบแจ้งเตือนของ ADTSpreadsheet'
+        });
+      } catch (err) {
+        console.error("❌ Failed to send welcome message:", err.message);
+      }
+    }
+  }
+});
+
+
 // ทดสอบส่งข้อความด้วยข้อความสั้นๆ 
 app.get('/test-minimal-message', async (req, res) => {
   try {
