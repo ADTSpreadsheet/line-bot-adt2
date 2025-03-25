@@ -115,9 +115,18 @@ async function updateExpiredRegistrations() {
 // Webhook รับจาก Excel VBA
 app.post('/webhook2', async (req, res) => {
   if (!req.body.ref_code && !req.body.machine_id && req.body.destination && Array.isArray(req.body.events)) {
-    console.log("🟡 Received test webhook from LINE Developer. Sending 200 OK.");
-    return res.status(200).send("OK");
+  const events = req.body.events;
+
+  if (events.length > 0 && events[0].source?.userId) {
+    console.log("🟢 LINE Webhook Event (test หรือจริง):");
+    console.log("📱 LINE USER ID:", events[0].source.userId);
+    console.log("🕒 Timestamp:", new Date().toISOString());
+  } else {
+    console.log("🟡 Received test webhook from LINE Developer. No userId found.");
   }
+
+  return res.status(200).send("OK");
+}
   try {
     console.log("📥 Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
     const { ref_code, first_name, last_name, house_number, district, province, phone_number, email, national_id, ip_address, machine_id } = req.body;
