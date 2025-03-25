@@ -202,15 +202,19 @@ app.post('/dashboard-access', async (req, res) => {
 
     console.log("📘 Notify:", notifyMessage);
 
-    // พี่จะส่งไป LINE ก็ใส่ตรงนี้เพิ่มได้ทีหลัง
+    // ✅ ส่ง LINE ได้ที่นี่
+    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
+    await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
 
-    return res.status(200).json({ success: true, message: "Dashboard access logged" });
+    console.log(`📬 Sent dashboard access confirmation for ${ref_code}`);
+    return res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
 
   } catch (error) {
-    console.error("❌ Error in /dashboard-access:", error);
+    console.error("❌ Error in /dashboard-access:", error.message);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
     
   const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID;
 
@@ -225,7 +229,7 @@ app.post('/dashboard-access', async (req, res) => {
 });
 
     // ดึงค่า LINE User ID จาก Environment หรือใช้ค่า default
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ub7406c5f05771fb36c32c1b1397539f6';
+    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
 
     try {
       await sendMessageToLineBot2(message, lineUserIdToNotify);
