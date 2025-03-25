@@ -202,37 +202,10 @@ app.post('/dashboard-access', async (req, res) => {
 
     console.log("📘 Notify:", notifyMessage);
 
-    // ✅ ส่ง LINE ได้ที่นี่
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
-    await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
-
-    console.log(`📬 Sent dashboard access confirmation for ${ref_code}`);
-    return res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
-
-  } catch (error) {
-    console.error("❌ Error in /dashboard-access:", error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-    
-  const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID;
-
-  try {
-    await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
-    console.log(`📬 Sent dashboard access confirmation for ${ref_code} at ${formattedDate} ${formattedTime}`);
-    res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
-  } catch (error) {
-    console.error("❌ Failed to send dashboard access message:", error.message);
-    res.status(500).json({ success: false, message: "Failed to send LINE message" });
-  }
-});
-
-    // ดึงค่า LINE User ID จาก Environment หรือใช้ค่า default
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
 
     try {
-      await sendMessageToLineBot2(message, lineUserIdToNotify);
+      await sendMessageToLineBot2(notifyMessage, lineUserIdToNotify);
     } catch (lineError) {
       console.error("⚠️ Could not send LINE notification:", lineError.message);
       if (lineError.response) {
@@ -243,6 +216,15 @@ app.post('/dashboard-access', async (req, res) => {
         });
       }
     }
+
+    return res.status(200).json({ success: true, message: "Dashboard access confirmed and notification sent" });
+
+  } catch (error) {
+    console.error("❌ Error in /dashboard-access:", error.message);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
     // ✅ LINE Webhook to capture multiple events
 app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
