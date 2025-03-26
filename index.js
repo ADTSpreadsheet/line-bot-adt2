@@ -4,6 +4,8 @@ const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const line = require('@line/bot-sdk');
 require('dotenv').config();
+const checkMachineIDRoute = require("./routes/checkMachineID");
+
 
 // กำหนดค่า Express
 const app = express();
@@ -485,6 +487,8 @@ app.get('/verify-user/:userId', async (req, res) => {
     });
   }
 });
+
+app.use("/webhook2", checkMachineIDRoute);
 
 // เริ่มเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
