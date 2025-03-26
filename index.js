@@ -490,6 +490,48 @@ app.get('/verify-user/:userId', async (req, res) => {
 
 app.use("/webhook2", checkMachineIDRoute);
 
+app.get("/webhook2/check-machine-id", async (req, res) => {
+  const { machine_id } = req.query;
+
+  console.log("=======================================");
+  console.log("📥 [API] CHECK MACHINE ID ถูกเรียกแล้ว");
+  console.log("🧾 MACHINE ID ที่ได้รับ:", machine_id);
+
+  if (!machine_id) {
+    console.log("❌ ไม่พบ machine_id ที่ส่งมา");
+    return res.status(400).json({ error: "Missing machine_id" });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("user_registrations")
+      .select("status")
+      .eq("machine_id", machine_id)
+      .single();
+
+    if (error || !data) {
+      console.log("⚠️ ไม่พบข้อมูลใน Supabase หรือเกิด error");
+      return res.status(200).json({ status: "INACTIVE" });
+    }
+
+    console.log("✅ พบข้อมูล Machine ID ใน Supabase");
+    console.log("📦 STATUS ที่ได้:", data.status);
+
+    if (data.status === "ACTIVE") {
+      console.log("🎯 สถานะ = ACTIVE → ส่งกลับให้ VBA");
+      return res.status(200).json({ status: "ACTIVE" });
+    } else {
+      console.log("🚫 ไม่ใช่ ACTIVE → ส่งกลับ INACTIVE");
+      return res.status(200).json({ status: "INACTIVE" });
+    }
+
+  } catch (err) {
+    console.error("❌ [SERVER ERROR] ตรวจสอบ Machine ID ล้มเหลว:", err.message);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 // เริ่มเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
