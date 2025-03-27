@@ -219,10 +219,13 @@ app.post('/webhook2/dashboard-respon', async (req, res) => {
       .then(() => console.log("LINE notification sent"))
       .catch(err => console.error("LINE notification error:", err.message));
     
+  // ปิด try
   } catch (error) {
-    console.error("Error:", error.message);
-    if (!res.headersSent) {
-      res.status(500).json({ success: false, message: "Server error" });
-    }
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.response?.data || null
+    });
   }
-});
+}); // <-- ❗ ปิด app.post('/webhook2', ...); ที่หายไป
+
