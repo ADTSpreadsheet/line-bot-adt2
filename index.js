@@ -47,11 +47,8 @@ async function sendMessageToLineBot2(message, userId) {
 
   console.log(`Token exists: ${Boolean(token)}, Length: ${token.length}`);
 
-  // ตรวจสอบเวลาที่ส่งข้อความล่าสุด
   const now = Date.now();
   const timeSinceLastMessage = now - lastMessageTimestamp;
-  
-  // หากส่งข้อความเร็วเกินไป ให้หน่วงเวลา
   if (timeSinceLastMessage < MESSAGE_COOLDOWN) {
     const waitTime = MESSAGE_COOLDOWN - timeSinceLastMessage;
     console.log(`⏳ Rate limiting: Waiting ${waitTime}ms before sending next message`);
@@ -77,7 +74,6 @@ async function sendMessageToLineBot2(message, userId) {
       }
     });
 
-    // อัปเดตเวลาที่ส่งข้อความล่าสุด
     lastMessageTimestamp = Date.now();
     console.log(`✅ LINE message sent successfully`);
     return response.data;
@@ -85,8 +81,6 @@ async function sendMessageToLineBot2(message, userId) {
     console.error(`❌ Failed to send LINE message: ${error.message}`);
     if (error.response) {
       console.error(`Error details: ${JSON.stringify(error.response.data)}`);
-      
-      // ตรวจสอบสถานะ Rate Limiting
       if (error.response.status === 429) {
         console.error("⚠️ Rate limit exceeded. Please try again later.");
       }
@@ -116,6 +110,14 @@ async function updateExpiredRegistrations() {
     console.error('❌ Error in task:', error);
   }
 }
+
+// ✅ เริ่มเซิร์ฟเวอร์
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  updateExpiredRegistrations();
+});
+
 
 // ... โค้ดเดิมด้านล่างคงไว้ทั้งหมด ...
 
