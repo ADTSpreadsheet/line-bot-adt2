@@ -5,13 +5,13 @@ const { createClient } = require('@supabase/supabase-js');
 const line = require('@line/bot-sdk');
 require('dotenv').config();
 const checkMachineIDRoute = require("./routes/checkMachineID");
-const pdpaTextRoute = require("./routes/pdpaText"); // ✅ เพิ่มบรรทัดนี้
+const pdpaTextRoute = require("./routes/pdpaText");
 
 // กำหนดค่า Express
 const app = express();
 app.use(express.json());
 
-// ✅ ผูกเส้นทาง /pdpa-text
+// ผูกเส้นทาง /pdpa-text
 app.use('/pdpa-text', pdpaTextRoute);
 
 // กำหนดค่า Supabase
@@ -37,11 +37,11 @@ const MESSAGE_COOLDOWN = 1000; // 1 วินาที
 
 // ฟังก์ชันสำหรับส่งข้อความไปยัง LINE
 async function sendMessageToLineBot2(message, userId) {
-  console.log(`\n📤 Preparing to send LINE message to ${userId}`);
+  console.log(`Preparing to send LINE message to ${userId}`);
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
   if (!token) {
-    console.error("❌ LINE_CHANNEL_ACCESS_TOKEN is not set");
+    console.error("LINE_CHANNEL_ACCESS_TOKEN is not set");
     return;
   }
 
@@ -51,7 +51,7 @@ async function sendMessageToLineBot2(message, userId) {
   const timeSinceLastMessage = now - lastMessageTimestamp;
   if (timeSinceLastMessage < MESSAGE_COOLDOWN) {
     const waitTime = MESSAGE_COOLDOWN - timeSinceLastMessage;
-    console.log(`⏳ Rate limiting: Waiting ${waitTime}ms before sending next message`);
+    console.log(`Rate limiting: Waiting ${waitTime}ms before sending next message`);
     await delay(waitTime);
   }
 
@@ -75,14 +75,14 @@ async function sendMessageToLineBot2(message, userId) {
     });
 
     lastMessageTimestamp = Date.now();
-    console.log(`✅ LINE message sent successfully`);
+    console.log(`LINE message sent successfully`);
     return response.data;
   } catch (error) {
-    console.error(`❌ Failed to send LINE message: ${error.message}`);
+    console.error(`Failed to send LINE message: ${error.message}`);
     if (error.response) {
       console.error(`Error details: ${JSON.stringify(error.response.data)}`);
       if (error.response.status === 429) {
-        console.error("⚠️ Rate limit exceeded. Please try again later.");
+        console.error("Rate limit exceeded. Please try again later.");
       }
     }
     throw error;
@@ -91,7 +91,7 @@ async function sendMessageToLineBot2(message, userId) {
 
 // อัปเดตสถานะการลงทะเบียนที่หมดอายุ
 async function updateExpiredRegistrations() {
-  console.log('🕒 Running task: Updating expired registrations');
+  console.log('Running task: Updating expired registrations');
   try {
     const now = new Date().toISOString();
     const { data, error } = await supabase
@@ -101,22 +101,23 @@ async function updateExpiredRegistrations() {
       .lt('expires_at', now);
 
     if (error) {
-      console.error('❌ Failed to update expired registrations:', error);
+      console.error('Failed to update expired registrations:', error);
       return;
     }
 
-    console.log(`✅ Updated status to BLOCK for ${data?.length || 0} expired registrations`);
+    console.log(`Updated status to BLOCK for ${data?.length || 0} expired registrations`);
   } catch (error) {
-    console.error('❌ Error in task:', error);
+    console.error('Error in task:', error);
   }
 }
 
-// ✅ เริ่มเซิร์ฟเวอร์
+// เริ่มเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   updateExpiredRegistrations();
 });
+
 
 
 // ... โค้ดเดิมด้านล่างคงไว้ทั้งหมด ...
