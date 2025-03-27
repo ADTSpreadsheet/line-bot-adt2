@@ -205,10 +205,11 @@ app.post('/webhook2/dashboard-respon', async (req, res) => {
     const formattedTime = timestamp.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
     
     const notifyMessage = 
-      ✅ ผู้ใช้ Ref.Code: ${ref_code}\n +
-      ✅ กำลังใช้งาน Dashboard อยู่\n +
-      📅 วันที่ ${formattedDate}\n +
-      🕒 เวลา ${formattedTime};
+  `✅ ผู้ใช้ Ref.Code: ${ref_code}\n` +
+  `✅ กำลังใช้งาน Dashboard อยู่\n` +
+  `📅 วันที่ ${formattedDate}\n` +
+  `🕒 เวลา ${formattedTime}`;
+
     
     const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
     sendMessageToLineBot2(notifyMessage, lineUserIdToNotify)
