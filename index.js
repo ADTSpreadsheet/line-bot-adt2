@@ -126,21 +126,34 @@ app.listen(PORT, () => {
 // Webhook รับจาก Excel VBA
 app.post('/webhook2', async (req, res) => {
   if (!req.body.ref_code && !req.body.machine_id && req.body.destination && Array.isArray(req.body.events)) {
-  const events = req.body.events;
+    const events = req.body.events;
 
-  if (events.length > 0 && events[0].source?.userId) {
-    console.log("LINE Webhook Event (test หรือจริง):");
-    console.log("LINE USER ID:", events[0].source.userId);
-    console.log("Timestamp:", new Date().toISOString());
-  } else {
-    console.log("Received test webhook from LINE Developer. No userId found.");
+    if (events.length > 0 && events[0].source?.userId) {
+      console.log("LINE Webhook Event (test หรือจริง):");
+      console.log("LINE USER ID:", events[0].source.userId);
+      console.log("Timestamp:", new Date().toISOString());
+    } else {
+      console.log("Received test webhook from LINE Developer. No userId found.");
+    }
+
+    return res.status(200).send("OK");
   }
 
-  return res.status(200).send("OK");
-}
   try {
     console.log("Received data from Excel VBA:", JSON.stringify(req.body, null, 2));
-    const { ref_code, first_name, last_name, house_number, district, province, phone_number, email, national_id, ip_address, machine_id } = req.body;
+    const {
+      ref_code,
+      first_name,
+      last_name,
+      house_number,
+      district,
+      province,
+      phone_number,
+      email,
+      national_id,
+      ip_address,
+      machine_id
+    } = req.body;
 
     if (!ref_code) {
       console.log("Missing required field: ref_code");
@@ -153,73 +166,41 @@ app.post('/webhook2', async (req, res) => {
 
     console.log("Preparing registrationData...");
 
-const registrationData = {
-  ref_code,
-  machine_id: machine_id || null,
-  first_name: first_name || null,
-  last_name: last_name || null,
-  house_number: house_number || null,
-  district: district || null,
-  province: province || null,
-  phone_number: phone_number || null,
-  email: email || null,
-  national_id: national_id || null,
-  ip_address: ip_address || null,
-  day_created_at: now.toISOString(),
-  verify_at: now.toISOString(),
-  expires_at: expiresDate.toISOString(),
-  status: 'ACTIVE'
-};
+    const registrationData = {
+      ref_code,
+      machine_id: machine_id || null,
+      first_name: first_name || null,
+      last_name: last_name || null,
+      house_number: house_number || null,
+      district: district || null,
+      province: province || null,
+      phone_number: phone_number || null,
+      email: email || null,
+      national_id: national_id || null,
+      ip_address: ip_address || null,
+      day_created_at: now.toISOString(),
+      verify_at: now.toISOString(),
+      expires_at: expiresDate.toISOString(),
+      status: 'ACTIVE'
+    };
 
-console.log("Prepared registrationData:", registrationData);
+    console.log("Prepared registrationData:", registrationData);
 
-const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
+    const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
 
-console.log("Sending to Supabase...");
+    console.log("Sending to Supabase...");
 
-if (error) {
-  console.error("Supabase insert error:", error);
-  return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
-}
-
-console.log("Registration saved in Supabase:", data);
-    return res.status(200).json({ 
-  success: true, 
-  message: "Registration successful", 
-  ref_code: ref_code 
-});
-
-// Endpoint สำหรับรับการแจ้งเตือนการเข้า Dashboard
-app.post('/webhook2/dashboard-respon', async (req, res) => {
-  try {
-    console.log("Received dashboard access notification");
-    const { ref_code } = req.body;
-    
-    if (!ref_code) {
-      return res.status(400).json({ success: false, message: "Missing ref_code" });
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
     }
-    
-    // ตอบกลับ 200 ทันที
-    res.status(200).json({ success: true, message: "Dashboard access recorded" });
-    
-    // ส่งข้อความแจ้งเตือน
-    const timestamp = new Date();
-    const formattedDate = timestamp.toLocaleDateString("th-TH", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const formattedTime = timestamp.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-    
-    const notifyMessage = 
-  `ผู้ใช้ Ref.Code: ${ref_code}\n` +
-  `กำลังใช้งาน Dashboard อยู่\n` +
-  `วันที่ ${formattedDate}\n` +
-  `เวลา ${formattedTime}`;
 
-    
-    const lineUserIdToNotify = process.env.ADMIN_LINE_USER_ID || 'Ua1cd02be16435b311c4a90cea9bee87e';
-    sendMessageToLineBot2(notifyMessage, lineUserIdToNotify)
-      .then(() => console.log("LINE notification sent"))
-      .catch(err => console.error("LINE notification error:", err.message));
-    
-  // ปิด try
+    console.log("Registration saved in Supabase:", data);
+    return res.status(200).json({
+      success: true,
+      message: "Registration successful",
+      ref_code: ref_code
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -227,5 +208,6 @@ app.post('/webhook2/dashboard-respon', async (req, res) => {
       details: error.response?.data || null
     });
   }
-}); // <-- ❗ ปิด app.post('/webhook2', ...); ที่หายไป
+});
+
 
