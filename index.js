@@ -167,8 +167,6 @@ app.post('/webhook2', async (req, res) => {
     console.log("Preparing registrationData...");
 
     const registrationData = {
-      ref_code,
-      machine_id: machine_id || null,
       first_name: first_name || null,
       last_name: last_name || null,
       house_number: house_number || null,
