@@ -167,10 +167,10 @@ app.post('/webhook2', async (req, res) => {
     console.log("Preparing registrationData...");
 
     console.log("Skipping insert to Supabase (now handled by API1)");
-    return res.status(200).json({
-      success: true,
-      message: "Received and skipped insert (API2 no longer inserts)",
-      ref_code: ref_code
-    });
+  return res.status(200).json({
+    success: true,
+    message: "Received and skipped insert (API2 no longer inserts)",
+    ref_code: ref_code
+  });
 });
   
