@@ -167,53 +167,10 @@ app.post('/webhook2', async (req, res) => {
     console.log("Preparing registrationData...");
 
     console.log("Skipping insert to Supabase (now handled by API1)");
-return res.status(200).json({
-  success: true,
-  message: "Received and skipped insert (API2 no longer inserts)",
-  ref_code: ref_code
-});
-
-    /*
-    const registrationData = {
-      first_name: first_name || null,
-      last_name: last_name || null,
-      house_number: house_number || null,
-      district: district || null,
-      province: province || null,
-      phone_number: phone_number || null,
-      email: email || null,
-      national_id: national_id || null,
-      ip_address: ip_address || null,
-      day_created_at: now.toISOString(),
-      verify_at: now.toISOString(),
-      expires_at: expiresDate.toISOString(),
-      status: 'ACTIVE'
-    };
-
-    console.log("Prepared registrationData:", registrationData);
-
-    const { data, error } = await supabase.from('user_registrations').insert([registrationData]).select();
-
-    console.log("Sending to Supabase...");
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(422).json({ success: false, message: "Unprocessable Entity", error: error.message });
-    }
-
-    console.log("Registration saved in Supabase:", data);
     return res.status(200).json({
       success: true,
-      message: "Registration successful",
+      message: "Received and skipped insert (API2 no longer inserts)",
       ref_code: ref_code
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-      details: error.response?.data || null
-    });
-  }
 });
-*/
-
+  
