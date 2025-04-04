@@ -5,10 +5,12 @@ const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const line = require('@line/bot-sdk');
 const machineRoutes = require('./routes/machineRoutes');
+const updateExpiredRoutes = require('./routes/updateExpiredRoutes');
 
 const app = express();
 app.use(express.json());
 app.use('/router', machineRoutes);
+app.use('/router', updateExpiredRoutes);
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
