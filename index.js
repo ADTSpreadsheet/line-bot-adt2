@@ -4,9 +4,11 @@ const express = require('express');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const line = require('@line/bot-sdk');
+const machineRoutes = require('./routes/machineRoutes');
 
 const app = express();
 app.use(express.json());
+app.use('/router', machineRoutes);
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
