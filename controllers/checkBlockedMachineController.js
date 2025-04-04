@@ -21,7 +21,7 @@ const checkBlockedMachine = async (req, res) => {
       return res.status(404).json({ success: false, isBlocked: false, message: 'Machine not found' });
     }
 
-    const isBlocked = data.status === 'BLOCK';
+    const isBlocked = data.status === 'BLOCKED';
 
     console.log(`[✅] Machine ${machine_id} is ${isBlocked ? 'BLOCKED' : 'ACTIVE'}`);
     return res.status(200).json({ success: true, isBlocked });
