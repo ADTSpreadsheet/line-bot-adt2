@@ -36,12 +36,12 @@ const checkBlockedMachine = async (req, res) => {
     }
 
     
-    logger.warn(`🔴 BLOCKED machine: "${machine_id}" due to expiration >> Go to SaleUserForm 🔒`);
+    logger.warn(`🔴 BLOCK machine: "${machine_id}" due to expiration >> Go to SaleUserForm 🔒`);
     return res.status(200).send('BLOCKED');
   }
 
   // ถ้ายังไม่หมดอายุ หรือถูกบล็อกอยู่แล้ว
-  logger.info(`🟨 Machine "${machine_id}" is not expired or already blocked >> Go to UF_TrialAccess ✅`);
+  logger.info(`🟨 Machine "${machine_id}" is not expired or already block >> Go to UF_TrialAccess ✅`);
   return res.status(403).send('Not expired or not blocked');
 };
 
