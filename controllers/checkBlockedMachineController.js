@@ -1,5 +1,3 @@
-// 📁 controllers/checkBlockedMachineController.js
-
 const { supabase } = require('../utils/supabaseClient');
 const logger = require('../utils/logger');
 
@@ -8,10 +6,11 @@ const checkBlockedMachine = async (req, res) => {
   const now = new Date().toISOString();
 
   if (!machine_id) {
+    logger.warn('⚠️ Missing machine_id from request body');
     return res.status(400).send('Missing machine_id');
   }
 
-  // ดึงข้อมูลเครื่องเดียว
+  // 🔍 STEP 1: ดึงข้อมูลเครื่องเดียวจาก registered_machines
   const { data, error } = await supabase
     .from('registered_machines')
     .select('status, expires_at')
@@ -19,12 +18,15 @@ const checkBlockedMachine = async (req, res) => {
     .maybeSingle();
 
   if (error || !data) {
-    logger.error(`❌ Supabase error: ${error?.message || "No data found"}`);
+    logger.error(`❌ Supabase error: ${error?.message || "No data found for machine ID"}`);
     return res.status(404).send('Machine not found');
   }
 
-  // เช็คว่าเครื่องนี้หมดอายุและยังไม่ได้ถูกบล็อก
-  if (data.status === 'ACTIVE' && data.expires_at <= now) {
+  const status = data.status?.toUpperCase();
+  const expired = data.expires_at && data.expires_at <= now;
+
+  // 🛑 STEP 2: ถ้าหมดอายุและยังเป็น ACTIVE → ทำการ BLOCK
+  if (status === 'ACTIVE' && expired) {
     const { error: updateError } = await supabase
       .from('registered_machines')
       .update({ status: 'BLOCK', status_update_at: now })
@@ -35,15 +37,13 @@ const checkBlockedMachine = async (req, res) => {
       return res.status(500).send('Failed to block expired machine');
     }
 
-    
     logger.warn(`🔴 BLOCK machine: "${machine_id}" due to expiration >> Go to SaleUserForm 🔒`);
     return res.status(200).send('BLOCKED');
   }
 
-  // ถ้ายังไม่หมดอายุ หรือถูกบล็อกอยู่แล้ว
-  logger.info(`🟨 Machine "${machine_id}" is not expired or already block >> Go to UF_TrialAccess ✅`);
+  // ✅ STEP 3: ยังไม่หมดอายุ หรือถูกบล็อกไปแล้ว
+  logger.info(`🟨 Machine "${machine_id}" is not expired or already blocked >> Go to UF_TrialAccess ✅`);
   return res.status(403).send('Not expired or not blocked');
 };
 
-// ✅ ต้องมี export แบบนี้!
 module.exports = { checkBlockedMachine };
