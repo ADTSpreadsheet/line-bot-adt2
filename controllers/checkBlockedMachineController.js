@@ -23,11 +23,11 @@ const checkBlockedMachine = async (req, res) => {
     }
 
     if (data && data.status === 'BLOCKED') {
-      logger.warn(`🛑 BLOCKED machine: ${machine_id}`);
+      logger.warn(`🛑 BLOCKED machine: ${machine_id}>> Go to SaleUserForm 🔒`);
       return res.status(200).send('BLOCKED');
     }
 
-    logger.info(`🔓 Machine "${machine_id}" is not blocked or not found`);
+    logger.info(`🔓 Machine "${machine_id}" is not blocked or not found >> Go to UF_TrialAccess ✅`);
     return res.status(403).send('Not blocked or not found');
 
   } catch (err) {
