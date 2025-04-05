@@ -35,7 +35,7 @@ const checkBlockedMachine = async (req, res) => {
       return res.status(500).send('Failed to block expired machine');
     }
 
-    logger.info(`✅ Machine ID "${machine_id}" → Update status already 🔒`);
+    
     logger.warn(`🔴 BLOCKED machine: "${machine_id}" due to expiration >> Go to SaleUserForm 🔒`);
     return res.status(200).send('BLOCKED');
   }
