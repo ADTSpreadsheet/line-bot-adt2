@@ -16,9 +16,26 @@ const checkBlockedMachine = async (req, res) => {
     .eq('machine_id', machine_id)
     .maybeSingle();
 
-  if (error || !data) {
-    logger.error(`❌ Supabase error: ${error?.message || "No data found"}`);
-    return res.status(404).send('Machine not found');
+  // 🆕 ถ้าไม่เจอข้อมูลเครื่องนี้ → Insert ใหม่
+  if (!data) {
+    logger.warn(`🆕 ยังไม่เคยเจอเครื่องนี้: ${machine_id} → ทำการเพิ่มเข้า Supabase`);
+
+    const { error: insertErr } = await supabase
+      .from('registered_machines')
+      .insert({
+        machine_id,
+        status: 'ACTIVE',
+        created_at: now,
+        line_bot_status: 'NONE',
+        line_status: 'none'
+      });
+
+    if (insertErr) {
+      logger.error(`❌ Insert machine failed: ${insertErr.message}`);
+      return res.status(500).send('Cannot insert machine');
+    }
+
+    return res.status(200).send('New machine registered');
   }
 
   // ✅ 1. ถ้าเครื่องถูก BLOCK ไปแล้ว
