@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
+// checkBlockedMachineController.js
+
 const { supabase } = require('../utils/supabaseClient');
 const logger = require('../utils/logger');
 
-router.post('/check-machine-status', async (req, res) => {
+const checkBlockedMachine = async (req, res) => {
   try {
     const { machine_id } = req.body;
 
@@ -27,7 +27,6 @@ router.post('/check-machine-status', async (req, res) => {
       return res.status(200).send('BLOCKED');
     }
 
-    // ถ้าไม่ BLOCKED หรือไม่พบข้อมูลเลย → ให้ตอบกลับด้วย status 403
     logger.info(`🔓 Machine "${machine_id}" is not blocked or not found`);
     return res.status(403).send('Not blocked or not found');
 
@@ -35,6 +34,6 @@ router.post('/check-machine-status', async (req, res) => {
     logger.error(`🔥 API Crash: ${err.message}`);
     return res.status(500).send('Server error');
   }
-});
+};
 
-module.exports = router;
+module.exports = { checkBlockedMachine }; // ✅ export แบบ object มีชื่อ
