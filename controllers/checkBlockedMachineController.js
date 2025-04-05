@@ -27,10 +27,10 @@ router.post('/check-machine-status', async (req, res) => {
       return res.status(200).send('BLOCKED');
     }
 
-    // ถ้าไม่เจอ หรือ status ไม่ใช่ BLOCKED
-    logger.info(`✅ Machine ID "${machine_id}" is not blocked`);
-    return res.status(204).send(); // ไม่ตอบอะไร แต่สถานะคือ "ไม่บล็อก"
-    
+    // ถ้าไม่ BLOCKED หรือไม่พบข้อมูลเลย → ให้ตอบกลับด้วย status 403
+    logger.info(`🔓 Machine "${machine_id}" is not blocked or not found`);
+    return res.status(403).send('Not blocked or not found');
+
   } catch (err) {
     logger.error(`🔥 API Crash: ${err.message}`);
     return res.status(500).send('Server error');
