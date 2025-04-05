@@ -1,3 +1,8 @@
+// 📁 controllers/checkBlockedMachineController.js
+
+const { supabase } = require('../utils/supabaseClient');
+const logger = require('../utils/logger');
+
 const checkBlockedMachine = async (req, res) => {
   const { machine_id } = req.body;
   const now = new Date().toISOString();
@@ -30,7 +35,7 @@ const checkBlockedMachine = async (req, res) => {
       return res.status(500).send('Failed to block expired machine');
     }
 
-    logger.info(`✅ Machine ID "${machine_id}" → Update status  already ✅`);
+    logger.info(`✅ Machine ID "${machine_id}" → Update status already 🔒`);
     logger.warn(`🔴 BLOCKED machine: "${machine_id}" due to expiration >> Go to SaleUserForm 🔒`);
     return res.status(200).send('BLOCKED');
   }
@@ -39,3 +44,6 @@ const checkBlockedMachine = async (req, res) => {
   logger.info(`🟨 Machine "${machine_id}" is not expired or already blocked >> Go to UF_TrialAccess ✅`);
   return res.status(403).send('Not expired or not blocked');
 };
+
+// ✅ ต้องมี export แบบนี้!
+module.exports = { checkBlockedMachine };
