@@ -2,7 +2,7 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-const handleBot2Event = async (req, res) => {
+const handleWebhookFromBot2 = async (req, res) => {
   const events = req.body.events;
 
   for (const event of events) {
@@ -42,4 +42,4 @@ const handleBot2Event = async (req, res) => {
   res.status(200).send('OK');
 };
 
-module.exports = { handleBot2Event };
+module.exports = { handleWebhookFromBot2 };
