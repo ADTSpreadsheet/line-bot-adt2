@@ -7,12 +7,14 @@ const line = require('@line/bot-sdk');
 const machineRoutes = require('./routes/machineRoutes');
 const checkBlockedMachineRoute = require('./routes/checkBlockedMachineRoute');
 const replyToUserRoutes = require('./routes/replyToUserRoutes');
+const webhook2Routes = require('./routes/webhook2');
 
 const app = express();
 app.use(express.json());
 app.use('/router', machineRoutes);
 app.use('/router', checkBlockedMachineRoute);
 app.use(replyToUserRoutes);
+app.use('/', webhook2Routes);
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
