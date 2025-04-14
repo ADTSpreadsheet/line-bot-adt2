@@ -1,24 +1,41 @@
 // controllers/lineWebhookBot2.js
 const axios = require('axios');
+const logger = require('../utils/logger');
+
 const handleBot2Event = async (req, res) => {
   const events = req.body.events;
 
   for (const event of events) {
     if (event.type === 'message' && event.message.type === 'text') {
       const msg = event.message.text;
+      const userId = event.source.userId;
 
-      // ✅ แยก Ref.Code จากข้อความ เช่น "@ML76 ขอบคุณครับ"
+      // ✅ แยก Ref.Code จากข้อความ เช่น "@ML76 สวัสดีครับ"
       const refCodeMatch = msg.match(/^@(\w+)/);
-      if (!refCodeMatch) continue;
+      if (!refCodeMatch) {
+        logger.warn(`ไม่ได้ใส่ Ref.Code ที่ขึ้นต้นด้วย @ มาในข้อความ: ${msg}`);
+        continue;
+      }
 
       const ref_code = refCodeMatch[1];
       const message = msg.replace(refCodeMatch[0], '').trim();
 
-      // ✅ ยิง POST ไป API1 ที่ /reply-from-admin
-      await axios.post('https://line-bot-adt.onrender.com/reply-from-admin', {
-        ref_code,
-        message
-      });
+      if (!message) {
+        logger.warn(`Ref.Code: ${ref_code} ไม่มีข้อความตอบกลับ`);
+        continue;
+      }
+
+      try {
+        // ✅ ส่งไป API1
+        const response = await axios.post('https://line-bot-adt.onrender.com/reply-from-admin', {
+          ref_code,
+          message
+        });
+
+        logger.info(`📤 ส่งข้อความถึง Ref: ${ref_code} เรียบร้อยแล้ว`);
+      } catch (err) {
+        logger.error(`❌ Error ส่งข้อความไป API1: ${err.message}`);
+      }
     }
   }
 
