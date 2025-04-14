@@ -6,11 +6,13 @@ const { createClient } = require('@supabase/supabase-js');
 const line = require('@line/bot-sdk');
 const machineRoutes = require('./routes/machineRoutes');
 const checkBlockedMachineRoute = require('./routes/checkBlockedMachineRoute');
+const replyToUserRoutes = require('./routes/replyToUserRoutes');
 
 const app = express();
 app.use(express.json());
 app.use('/router', machineRoutes);
 app.use('/router', checkBlockedMachineRoute);
+app.use(replyToUserRoutes);
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
