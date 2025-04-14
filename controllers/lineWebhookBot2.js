@@ -28,7 +28,7 @@ const handleWebhookFromBot2 = async (req, res) => {
       }
       try {
         // ✅ ส่งไป API1
-        const response = await axios.post('https://line-bot-adt.onrender.com/reply-from-admin', {
+        const response = await axios.post('https://line-bot-adt.onrender.com/admin/reply-from-admin', {
           ref_code,
           message
         });
