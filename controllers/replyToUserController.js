@@ -1,48 +1,34 @@
-// controllers/replyToUserController.js
-const { supabase } = require('../utils/supabaseClient');
-const line = require('@line/bot-sdk');
-const logger = require('../utils/logger').createModuleLogger('ReplyToUser');
+const axios = require('axios');
+const logger = require('../utils/logger');
 
-// ใช้ Token ของ BOT1
-const client = new line.Client({
-  channelAccessToken: process.env.BOT1_LINE_CHANNEL_ACCESS_TOKEN
-});
+// 🔧 API1 Endpoint สำหรับรับข้อความตอบกลับจาก Admin
+const API1_REPLY_ENDPOINT = process.env.API1_REPLY_ENDPOINT || 'https://line-bot-adt.onrender.com/router/reply-from-admin';
 
 exports.replyToUser = async (req, res) => {
   const { ref_code, message } = req.body;
 
-  logger.info(`\u{1F4E2} [REPLY] รับคำสั่งตอบกลับ → Ref.Code: ${ref_code}`);
-
   if (!ref_code || !message) {
-    logger.warn(`[REPLY] ข้อมูลไม่ครบ: ${JSON.stringify(req.body)}`);
-    return res.status(400).json({ message: 'กรุณาระบุ ref_code และ message' });
+    logger.warn('[ADMIN ➜ USER] ❌ Missing ref_code or message');
+    return res.status(400).json({ error: 'กรุณาระบุ ref_code และข้อความให้ครบถ้วน' });
   }
 
   try {
-    // ดึง line_user_id จาก Supabase
-    const { data, error } = await supabase
-      .from('auth_sessions')
-      .select('line_user_id')
-      .eq('ref_code', ref_code)
-      .single();
+    logger.info(`[ADMIN ➜ USER] 🔁 ส่งข้อความไปยัง API1 → ref_code: ${ref_code}`);
 
-    if (error || !data) {
-      logger.error(`[REPLY] ไม่พบ line_user_id สำหรับ Ref.Code: ${ref_code}`);
-      return res.status(404).json({ message: 'ไม่พบผู้ใช้จาก Ref.Code นี้' });
-    }
-
-    const lineUserId = data.line_user_id;
-
-    // ส่งข้อความกลับไปหาลูกค้า
-    await client.pushMessage(lineUserId, {
-      type: 'text',
-      text: message
+    const response = await axios.post(API1_REPLY_ENDPOINT, {
+      ref_code,
+      message
     });
 
-    logger.info(`\u{2709}\u{FE0F} ส่งข้อความกลับไปยังผู้ใช้เรียบร้อย → line_user_id: ${lineUserId}`);
-    return res.status(200).json({ message: 'ส่งข้อความสำเร็จ' });
-  } catch (err) {
-    logger.error(`[REPLY] ERROR: ${err.message}`);
-    return res.status(500).json({ message: 'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์' });
+    if (response.status === 200) {
+      logger.info(`[ADMIN ➜ USER] ✅ ส่งข้อความสำเร็จถึง API1`);
+      return res.status(200).json({ success: true, message: 'ส่งข้อความสำเร็จแล้วครับ' });
+    } else {
+      logger.warn(`[ADMIN ➜ USER] ⚠️ ส่งไม่สำเร็จ → Status: ${response.status}`);
+      return res.status(500).json({ error: 'API1 ตอบกลับไม่สำเร็จ' });
+    }
+  } catch (error) {
+    logger.error(`[ADMIN ➜ USER] ❌ ส่งข้อความล้มเหลว: ${error.message}`);
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดระหว่างส่งข้อมูล' });
   }
 };
