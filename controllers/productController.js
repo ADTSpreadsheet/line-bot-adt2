@@ -1,9 +1,10 @@
 // controllers/productController.js
+require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 
 const supabase = createClient(
-  'https://wpxpukbvynxawfxcdroj.supabase.co',
-  'YOUR_SERVICE_ROLE_KEY'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
 )
 
 exports.getProducts = async (req, res) => {
