@@ -83,7 +83,7 @@ async function reportFlexSentToAdmin({ full_name, national_id, phone_number, pro
 
 📌 สถานะ: รอการอนุมัติจาก Tumcivil`;
 
-  await lineBot2.pushMessage(adminUserId, { type: "text", text: report });
+  await lineBot2.pushMessage(adminUserIdBot2, { type: "text", text: report });
 }
 
 module.exports = {
