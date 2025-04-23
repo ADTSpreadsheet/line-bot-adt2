@@ -86,7 +86,7 @@ const handleSlipSubmission = async (req, res) => {
     const { data: Row, error: lookupError } = await supabase
       .from("products")
       .select("product_name")
-      .eq("product_code", productSource)
+      .eq("product_source", productSource)
       .single();
 
     if (lookupError || !productRow) {
