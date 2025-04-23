@@ -1,20 +1,10 @@
-const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { supabase } = require("../utils/supabaseClient");
 const { getNextSlipNumber } = require("../services/slipNumberService");
 const { sendFlexToTum } = require("../services/lineBot");
-const bodyParser = require("body-parser");
 
-// สร้าง Express app หรือ Router
-const router = express.Router();
-
-// เพิ่ม limit สำหรับการรับข้อมูล JSON ขนาดใหญ่
-router.use(bodyParser.json({ limit: '50mb' }));
-router.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-
-// route สำหรับรับข้อมูลการอัพโหลดสลิป
-router.post("/submit", async (req, res) => {
+const handleSlipSubmission = async (req, res) => {
   try {
     const {
       first_name,
@@ -22,7 +12,7 @@ router.post("/submit", async (req, res) => {
       national_id,
       phone_number,
       product_source,
-      file_name,       // ชื่อไฟล์เดิมจากลูกค้า
+      file_name,       // ชื่อไฟล์เดิมจากลูกค้า (ไม่ได้ใช้งานแล้ว แต่เก็บไว้เผื่อต้องการเก็บประวัติ)
       file_content     // base64 string ของรูปภาพ
     } = req.body;
 
@@ -99,6 +89,6 @@ router.post("/submit", async (req, res) => {
     console.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
-});
+};
 
-module.exports = router;
+module.exports = { handleSlipSubmission };
