@@ -9,8 +9,8 @@ const supabase = createClient(
 
 const lineWebhook3 = async (req, res) => {
   try {
-    console.log("📨 Event:", event);
     const events = req.body.events;
+    console.log("📨 Events ที่ได้รับ:", events); // ✅ log ถูกต้อง
 
     for (const event of events) {
       if (event.type === "postback") {
@@ -20,7 +20,7 @@ const lineWebhook3 = async (req, res) => {
         const postData = new URLSearchParams(event.postback.data);
 
         const action = postData.get("action"); // approve / reject
-        const slipRef = postData.get("slip_ref"); // แก้ตรงนี้
+        const slipRef = postData.get("slip_ref"); // ✅ ต้องเป็น slip_ref (ตรงกับที่ส่งจาก Flex)
 
         if (!slipRef) continue;
 
@@ -28,20 +28,18 @@ const lineWebhook3 = async (req, res) => {
         let licenseNo = null;
 
         if (action === "approve") {
-          // ดึง license ล่าสุด
           const { data: lastLic } = await supabase
             .from("license_holders")
             .select("license_no")
             .order("license_no", { ascending: false })
             .limit(1);
 
-          const lastNumber = lastLic?.[0]?.license_no?.split("-")[2] || "00000"; // แก้เลข index
+          const lastNumber = lastLic?.[0]?.license_no?.split("-")[2] || "00000";
           const nextNumber = String(Number(lastNumber) + 1).padStart(5, "0");
           licenseNo = `ADT-01-7500-${nextNumber}`;
           status = "approved";
         }
 
-        // ดึงข้อมูลลูกค้าเพิ่มเพื่อรายงานพี่เก่ง
         const { data: slipData } = await supabase
           .from("slip_submissions")
           .select("first_name, last_name, product_source")
@@ -50,7 +48,6 @@ const lineWebhook3 = async (req, res) => {
 
         const { first_name, last_name, product_source } = slipData;
 
-        // อัปเดตสถานะในตาราง
         await supabase
           .from("slip_submissions")
           .update({
@@ -61,7 +58,6 @@ const lineWebhook3 = async (req, res) => {
 
         const now = moment().format("YYYY-MM-DD HH:mm");
 
-        // ส่งข้อความกลับไปยังพี่เก่งผ่าน Bot2
         if (status === "approved") {
           const reportText =
             `🔔 TumCivil (Bot3) ได้อนุมัติคำสั่งซื้อเรียบร้อยแล้ว\n\n` +
