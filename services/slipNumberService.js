@@ -25,4 +25,7 @@ const generateSlipNumber = async (supabase) => {
   return slipRef;
 };
 
-module.exports = { generateSlipNumber };
+module.exports = {
+  getNextSlipNumber
+};
+
