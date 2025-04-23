@@ -1,5 +1,5 @@
 const { supabase } = require("../utils/supabaseClient");
-const { lineBot3, lineBot2, adminUserId } = require("../utils/config");
+const { lineBot3, lineBot2, adminUserId, supabase } = require("../config");
 const axios = require("axios");
 
 const lineWebhook3 = async (req, res) => {
