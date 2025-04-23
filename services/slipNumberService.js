@@ -1,9 +1,5 @@
-// 📁 services/slipNumberService.js
-
-const generateSlipNumber = async (supabase) => {
+const getNextSlipNumber = async (supabase) => {
   const prefix = "SLP-";
-
-  // ดึงเลขล่าสุดจากตาราง slip_submissions
   const { data, error } = await supabase
     .from("slip_submissions")
     .select("slip_ref")
@@ -14,18 +10,18 @@ const generateSlipNumber = async (supabase) => {
 
   if (data && data.length > 0) {
     const lastRef = data[0].slip_ref;
-    const match = lastRef?.match(/SLP-(\d+)/);
+    const match = lastRef.match(/SLP-(\d+)/);
     if (match) {
       lastNumber = parseInt(match[1], 10);
     }
   }
 
   const nextNumber = lastNumber + 1;
-  const slipRef = `${prefix}${nextNumber.toString().padStart(5, "0")}`;
+  const slipRef = `${prefix}${nextNumber.toString().padStart(4, "0")}`;
   return slipRef;
 };
 
-module.exports = {
-  getNextSlipNumber
-};
 
+module.exports = {
+  getNextSlipNumber,
+};
