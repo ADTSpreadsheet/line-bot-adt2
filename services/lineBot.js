@@ -90,6 +90,7 @@ module.exports = {
   lineBot3,
   lineBot2,
   adminUserId,
+  adminUserIdBot2,
   sendFlexToTum,
   reportFlexSentToAdmin
 };
