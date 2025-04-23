@@ -72,7 +72,7 @@ const handleSlipSubmission = async (req, res) => {
         last_name,
         national_id,
         phone_number,
-        _source: source,
+        product_source: productSource,
         slip_image_url: publicUrl,
         submissions_status: "pending"
       }]);
