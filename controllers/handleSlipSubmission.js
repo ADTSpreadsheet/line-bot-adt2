@@ -94,7 +94,7 @@ const handleSlipSubmission = async (req, res) => {
       return res.status(500).json({ error: "Product not found" });
     }
 
-    const productName = productRow.product_name;
+    const productName = Row.product_name;
     console.log("🔎 Found product name:", productName);
 
     // STEP 5.1: ส่ง Flex + รายงาน Bot2
