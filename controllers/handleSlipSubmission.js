@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { supabase } = require("../utils/supabaseClient");
 const { getNextSlipNumber } = require("../services/slipNumberService");
-const { sendFlexToTum } = require("../services/lineBot");
+const { sendFlexToTum, reportFlexSentToAdmin } = require("../services/lineBot");
 
 const handleSlipSubmission = async (req, res) => {
   try {
@@ -25,14 +25,14 @@ const handleSlipSubmission = async (req, res) => {
       return res.status(400).json({ error: "Slip image file content is required." });
     }
 
-    // STEP 1
+    // STEP 1: Gen SlipRef + file name
     const slipNo = await getNextSlipNumber();
     const slipRef = `SLP-${slipNo}`;
-    const productSource = product_source.split("/").pop().split(".")[0];
+    const productSource = product_source.split("/").pop().split(".")[0]; // <-- ปรับให้รองรับแบบลิงก์และชื่อเฉย ๆ
     const fileName = `${productSource}-SLP-${slipNo}.jpg`;
     console.log("🆔 SlipRef:", slipRef);
 
-    // STEP 2
+    // STEP 2: Convert base64 to buffer and upload
     let base64Data = file_content;
     if (base64Data.includes(',')) {
       base64Data = base64Data.split(',')[1];
@@ -55,7 +55,7 @@ const handleSlipSubmission = async (req, res) => {
 
     console.log("✅ Upload complete:", uploadData);
 
-    // STEP 3
+    // STEP 3: Get public URL
     const { data: { publicUrl } } = supabase
       .storage
       .from("adtpayslip")
@@ -63,7 +63,7 @@ const handleSlipSubmission = async (req, res) => {
 
     console.log("🌐 Public URL:", publicUrl);
 
-    // STEP 4
+    // STEP 4: Insert DB
     const { error: insertError } = await supabase
       .from("slip_submissions")
       .insert([{
@@ -72,7 +72,7 @@ const handleSlipSubmission = async (req, res) => {
         last_name,
         national_id,
         phone_number,
-        product_source,
+        product_source: productSource,
         slip_image_url: publicUrl,
         submissions_status: "pending"
       }]);
@@ -82,20 +82,31 @@ const handleSlipSubmission = async (req, res) => {
       return res.status(500).json({ error: "Failed to insert into database", details: insertError.message });
     }
 
-    // STEP 5
+    // STEP 5.1: ส่ง Flex + รายงาน Bot2
     console.log("📤 Sending Flex to Tum...");
     await sendFlexToTum({
       slip_ref: slipRef,
       full_name: `${first_name} ${last_name}`,
       phone_number,
       national_id,
-      product_source,
+      product_source: productSource,
       slip_url: publicUrl
     });
 
+    const now = new Date().toLocaleString("th-TH", { timeZone: "Asia/Bangkok" });
+
+    await reportFlexSentToAdmin({
+      full_name: `${first_name} ${last_name}`,
+      national_id,
+      phone_number,
+      product_source: productSource,
+      time: now
+    });
+
+    // STEP 6: ตอบกลับ VBA
     console.log("✅ All done!");
     return res.status(200).json({
-      message: "Slip uploaded successfully",
+      message: "Slip uploaded and Flex sent",
       slip_ref: slipRef
     });
 
@@ -104,6 +115,5 @@ const handleSlipSubmission = async (req, res) => {
     return res.status(500).json({ error: "Internal server error", details: err.message });
   }
 };
-
 
 module.exports = { handleSlipSubmission };
