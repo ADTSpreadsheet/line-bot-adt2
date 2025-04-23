@@ -6,8 +6,8 @@ const lineBot3 = new line.Client({
 });
 
 const lineBot2 = new line.Client({
-  channelAccessToken: process.env.BOT2_ACCESS_TOKEN,
-  channelSecret: process.env.BOT2_CHANNEL_SECRET,
+  channelAccessToken: process.env.LINE_BOT2_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_BOT2_CHANNEL_SECRET,
 });
 
 const adminUserId = process.env.BOT3_TARGET_USER_ID;
