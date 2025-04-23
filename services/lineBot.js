@@ -11,6 +11,8 @@ const lineBot2 = new line.Client({
 });
 
 const adminUserId = process.env.BOT3_TARGET_USER_ID;
+const adminUserIdBot2 = process.env.ADMIN_USER_ID_BOT2;
+
 
 // 🧩 ฟังก์ชันส่ง Flex ไปยังคุณตั้มผ่าน Bot3
 async function sendFlexToTum({ slip_ref, full_name, phone_number, national_id, product_source, slip_url }) {
