@@ -84,7 +84,7 @@ const handleSlipSubmission = async (req, res) => {
 
     // ✅ STEP 5.0: Map _source → _name
     const { data: Row, error: lookupError } = await supabase
-      .from("product_Data_Base")
+      .from("products")
       .select("product_name")
       .eq("product_code", productSource)
       .single();
