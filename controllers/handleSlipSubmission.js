@@ -28,7 +28,7 @@ const handleSlipSubmission = async (req, res) => {
     // STEP 1: Gen SlipRef + file name
     const slipNo = await getNextSlipNumber();
     const slipRef = `SLP-${slipNo}`;
-    const productSource = product_source.split("/").pop().split(".")[0]; // <-- ปรับให้รองรับแบบลิงก์และชื่อเฉย ๆ
+    const productSource = product_source.split("/").pop().split(".")[0];
     const fileName = `${productSource}-SLP-${slipNo}.jpg`;
     console.log("🆔 SlipRef:", slipRef);
 
@@ -81,6 +81,21 @@ const handleSlipSubmission = async (req, res) => {
       console.error("❌ DB insert error:", insertError);
       return res.status(500).json({ error: "Failed to insert into database", details: insertError.message });
     }
+
+    // ✅ STEP 5.0: Map product_source → product_name
+    const { data: productRow, error: lookupError } = await supabase
+      .from("Product_Data_Base")
+      .select("product_name")
+      .eq("product_code", productSource)
+      .single();
+
+    if (lookupError || !productRow) {
+      console.error("❌ Product name lookup failed:", lookupError);
+      return res.status(500).json({ error: "Product not found" });
+    }
+
+    const productName = productRow.product_name;
+    console.log("🔎 Found product name:", productName);
 
     // STEP 5.1: ส่ง Flex + รายงาน Bot2
     console.log("📤 Sending Flex to Tum...");
