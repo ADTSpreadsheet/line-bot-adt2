@@ -9,11 +9,14 @@ const supabase = createClient(
 
 const lineWebhook3 = async (req, res) => {
   try {
+    console.log("📨 Event:", event);
     const events = req.body.events;
 
     for (const event of events) {
       if (event.type === "postback") {
+        console.log("🔄 รับ postback แล้ว:", event.postback.data);
         const userId = event.source.userId;
+        console.log("🧍‍♂️ ผู้ใช้ที่กดปุ่มคือ:", userId);
         const postData = new URLSearchParams(event.postback.data);
 
         const action = postData.get("action"); // approve / reject
