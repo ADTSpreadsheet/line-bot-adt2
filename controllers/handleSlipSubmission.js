@@ -89,7 +89,7 @@ const handleSlipSubmission = async (req, res) => {
       full_name: `${first_name} ${last_name}`,
       phone_number,
       national_id,
-      product_source: productSource,
+      product_name: productName,
       slip_url: publicUrl
     });
 
@@ -99,7 +99,7 @@ const handleSlipSubmission = async (req, res) => {
       full_name: `${first_name} ${last_name}`,
       national_id,
       phone_number,
-      product_source: productSource,
+      product_name: productName,
       time: now
     });
 
