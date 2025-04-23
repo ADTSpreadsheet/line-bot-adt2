@@ -12,11 +12,13 @@ const handleSlipSubmission = async (req, res) => {
       national_id,
       phone_number,
       product_source,
-      slip_path // local file path เช่น "D:\\ADT\\slips\\slip001.jpg"
+      file_name,       // ชื่อไฟล์เดิมจากลูกค้า (ไม่ได้ใช้งานแล้ว แต่เก็บไว้เผื่อต้องการเก็บประวัติ)
+      file_content     // base64 string ของรูปภาพ
     } = req.body;
 
-    if (!fs.existsSync(slip_path)) {
-      return res.status(400).json({ error: "Slip image file not found." });
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!file_content) {
+      return res.status(400).json({ error: "Slip image file content is required." });
     }
 
     // 1️⃣ รันหมายเลข Slip ใหม่
@@ -24,8 +26,14 @@ const handleSlipSubmission = async (req, res) => {
     const slipRef = `SLP-${slipNo}`;
     const fileName = `${product_source}-SLP-${slipNo}.jpg`;
 
-    // 2️⃣ อ่านภาพจาก path แล้ว upload ไป storage
-    const fileBuffer = fs.readFileSync(slip_path);
+    // 2️⃣ แปลง base64 เป็น buffer และอัพโหลดไป storage
+    // ตัด prefix base64 ออกถ้ามี (เช่น data:image/jpeg;base64,)
+    let base64Data = file_content;
+    if (base64Data.includes(',')) {
+      base64Data = base64Data.split(',')[1];
+    }
+
+    const fileBuffer = Buffer.from(base64Data, 'base64');
 
     const { error: uploadError } = await supabase.storage
       .from("adtpayslip")
@@ -77,7 +85,6 @@ const handleSlipSubmission = async (req, res) => {
       message: "Slip uploaded successfully",
       slip_ref: slipRef
     });
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal server error" });
