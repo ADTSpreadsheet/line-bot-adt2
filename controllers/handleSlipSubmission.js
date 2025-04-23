@@ -28,8 +28,8 @@ const handleSlipSubmission = async (req, res) => {
     // STEP 1: Gen SlipRef + file name
     const slipNo = await getNextSlipNumber();
     const slipRef = `SLP-${slipNo}`;
-    const productSource = product_source.split("/").pop().split(".")[0];
-    const fileName = `${Source}-SLP-${slipNo}.jpg`;
+    const productsource = product_source.split("/").pop().split(".")[0];
+    const fileName = `${source}-SLP-${slipNo}.jpg`;
     console.log("🆔 SlipRef:", slipRef);
 
     // STEP 2: Convert base64 to buffer and upload
@@ -72,7 +72,7 @@ const handleSlipSubmission = async (req, res) => {
         last_name,
         national_id,
         phone_number,
-        _source: Source,
+        _source: source,
         slip_image_url: publicUrl,
         submissions_status: "pending"
       }]);
@@ -86,7 +86,7 @@ const handleSlipSubmission = async (req, res) => {
     const { data: Row, error: lookupError } = await supabase
       .from("product_Data_Base")
       .select("product_name")
-      .eq("product_code", productSource)
+      .eq("product_code", productsource)
       .single();
 
     if (lookupError || !productRow) {
