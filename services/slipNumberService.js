@@ -1,5 +1,6 @@
 const { supabase } = require("../utils/supabaseClient");
-const getNextSlipNumber = async (supabase) => {
+
+const getNextSlipNumber = async () => {
   const prefix = "SLP-";
   const { data, error } = await supabase
     .from("slip_submissions")
@@ -21,7 +22,6 @@ const getNextSlipNumber = async (supabase) => {
   const slipRef = `${prefix}${nextNumber.toString().padStart(4, "0")}`;
   return slipRef;
 };
-
 
 module.exports = {
   getNextSlipNumber,
