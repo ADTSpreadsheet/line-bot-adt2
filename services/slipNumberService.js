@@ -1,3 +1,4 @@
+const { supabase } = require("../utils/supabaseClient");
 const getNextSlipNumber = async (supabase) => {
   const prefix = "SLP-";
   const { data, error } = await supabase
