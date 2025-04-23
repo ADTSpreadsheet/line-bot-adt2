@@ -1,6 +1,10 @@
-const { supabase } = require("../utils/supabaseClient");
-const { lineBot3, lineBot2, adminUserId, supabase } = require("../config");
-const axios = require("axios");
+const { lineBot3, lineBot2, adminUserId } = require("../config");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 const lineWebhook3 = async (req, res) => {
   try {
