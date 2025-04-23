@@ -29,7 +29,7 @@ const handleSlipSubmission = async (req, res) => {
     const slipNo = await getNextSlipNumber();
     const slipRef = `SLP-${slipNo}`;
     const productsource = product_source.split("/").pop().split(".")[0];
-    const fileName = `${source}-SLP-${slipNo}.jpg`;
+    const fileName = `${productSource}-SLP-${slipNo}.jpg`;
     console.log("🆔 SlipRef:", slipRef);
 
     // STEP 2: Convert base64 to buffer and upload
