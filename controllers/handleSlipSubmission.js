@@ -28,8 +28,8 @@ const handleSlipSubmission = async (req, res) => {
     // STEP 1
     const slipNo = await getNextSlipNumber();
     const slipRef = `SLP-${slipNo}`;
-    const productCode = product_source.split("/").pop().split(".")[0];
-    const fileName = `${productCode}-SLP-${slipNo}.jpg`;
+    const productSource = product_source.split("/").pop().split(".")[0];
+    const fileName = `${productSource}-SLP-${slipNo}.jpg`;
     console.log("🆔 SlipRef:", slipRef);
 
     // STEP 2
