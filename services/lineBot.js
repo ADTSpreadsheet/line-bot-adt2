@@ -49,7 +49,7 @@ async function sendFlexToTum({ slip_ref, full_name, phone_number, national_id, p
             action: {
               type: "postback",
               label: "✅ อนุมัติ",
-              data: JSON.stringify({ action: "approve", slip_ref })
+              data: JSON.stringify({ action: "approve", slip_ref: slip_ref })
             }
           },
           {
@@ -58,7 +58,7 @@ async function sendFlexToTum({ slip_ref, full_name, phone_number, national_id, p
             action: {
               type: "postback",
               label: "❌ ปฏิเสธ",
-              data: JSON.stringify({ action: "reject", slip_ref })
+              data: JSON.stringify({ action: "reject", slip_ref: slip_ref })
             }
           }
         ]
@@ -66,7 +66,7 @@ async function sendFlexToTum({ slip_ref, full_name, phone_number, national_id, p
     }
   };
 
-  await lineBot3.pushMessage(adminUserId, flexMessage);
+  await lineBot3.pushMessage(adminUserId, [flexMessage]); // ⬅️ ต้องห่อใน array ด้วย!
 }
 
 // 🧩 ฟังก์ชันให้ Bot2 รายงานพี่เก่ง
