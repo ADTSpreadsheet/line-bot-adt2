@@ -72,13 +72,12 @@ async function sendFlexToTum({ slip_ref, full_name, phone_number, national_id, p
 }
 
 // 🧩 ฟังก์ชันให้ Bot2 รายงานพี่เก่ง
-async function reportFlexSentToAdmin({ full_name, national_id, phone_number, product_source, time }) {
-  const report = `📣 รายงานการส่ง Flex สำเร็จแล้ว
-
+async function reportFlexSentToAdmin({ full_name, national_id, phone_number, product_name, time }) {
+  const report = `📣 New copyright owner
 👤 ชื่อ: ${full_name}
 🆔 เลขบัตร: ${national_id}
 📱 เบอร์โทร: ${phone_number}
-🛒 สินค้า: ${product_source}
+🛒 สินค้า: ${product_name}
 ⏰ เวลา: ${time}
 
 📌 สถานะ: รอการอนุมัติจาก Tumcivil`;
