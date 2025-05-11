@@ -11,6 +11,7 @@ const webhook2Routes = require('./routes/webhook2');
 const productRoutes = require('./routes/productRoutes')
 const webhook3Routes = require("./routes/webhook3");
 const slipRoutes = require("./routes/slipRoutes");
+const adminRoutes = require('./routes/adminRoutes');
 
 
 
@@ -24,6 +25,7 @@ app.use('/', webhook2Routes);
 app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
+app.use('/', adminRoutes);
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
