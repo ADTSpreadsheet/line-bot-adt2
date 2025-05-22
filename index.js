@@ -12,6 +12,8 @@ const productRoutes = require('./routes/productRoutes')
 const webhook3Routes = require("./routes/webhook3");
 const slipRoutes = require("./routes/slipRoutes");
 const adminRoutes = require('./routes/adminRoutes');
+const adtLiveWorkshopRoutes = require('./routes/adtLiveWorkshopRoutes');
+
 
 
 
@@ -26,6 +28,8 @@ app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
+app.use("/ADTLiveWorkshop", adtLiveWorkshopRoutes);
+
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
 const supabase = createClient(
