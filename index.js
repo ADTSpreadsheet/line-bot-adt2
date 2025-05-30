@@ -23,7 +23,7 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use('/router', machineRoutes);
 app.use('/router', checkBlockedMachineRoute);
-
+app.use('/', eventLineRoutes);
 app.use(replyToUserRoutes);
 
 app.use('/', productRoutes)
