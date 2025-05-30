@@ -12,6 +12,7 @@ const productRoutes = require('./routes/productRoutes')
 const webhook3Routes = require("./routes/webhook3");
 const slipRoutes = require("./routes/slipRoutes");
 const adminRoutes = require('./routes/adminRoutes');
+const eventLineRoutes = require('./routes/eventLine');
 
 
 
@@ -28,6 +29,7 @@ app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
+app.post('/webhook2', eventLineRoutes);
 
 
 
