@@ -1,36 +1,27 @@
 const { supabase } = require('../utils/supabaseClient');
 
-async function generateWorkshopSummary() {
-  // ดึงข้อมูลคลาสทั้งหมด
+exports.generateWorkshopSummary = async () => {
   const { data, error } = await supabase
     .from('adt_workshop_attendees')
     .select('adt_class_no');
 
-  if (error || !data) {
-    console.error('Error fetching workshop data:', error);
-    return '❌ เกิดข้อผิดพลาดในการดึงข้อมูลจากระบบ กรุณาลองใหม่ภายหลัง';
+  if (error) {
+    console.error('[❌] ดึงข้อมูลล้มเหลว:', error);
+    return 'เกิดข้อผิดพลาดในการดึงข้อมูล';
   }
 
-  // สร้าง object สำหรับนับคนในแต่ละคลาส
   const summary = {};
-  let total = 0;
-
   data.forEach(row => {
-    const className = row.adt_class_no || 'ไม่ระบุคลาส';
-    summary[className] = (summary[className] || 0) + 1;
-    total++;
+    const classNo = row.adt_class_no || 'ไม่ระบุ';
+    summary[classNo] = (summary[classNo] || 0) + 1;
   });
 
-  // จัดข้อความ
-  let message = '📊 สรุปยอดผู้ลงทะเบียน ADTLive Workshop\n\n';
-  Object.entries(summary).forEach(([cls, count]) => {
-    message += `- ${cls}: ${count} คน\n`;
-  });
+  const lines = Object.entries(summary)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([classNo, count]) => `- ${classNo}: ${count} คน`);
 
-  message += `\nรวมทั้งหมด: ${total} คน`;
-  message += `\n(อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH', { hour12: false })})`;
+  const total = data.length;
+  const now = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-  return message;
-}
-
-module.exports = { generateWorkshopSummary };
+  return `📊 สรุปยอดผู้ลงทะเบียน ADTLive Workshop\n\n${lines.join('\n')}\n\nรวมทั้งหมด: ${total} คน\n(อัปเดตล่าสุด: ${now})`;
+};
