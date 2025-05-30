@@ -23,13 +23,14 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use('/router', machineRoutes);
 app.use('/router', checkBlockedMachineRoute);
+app.post('/webhook2', eventLineRoutes);
 app.use(replyToUserRoutes);
 app.use('/', webhook2Routes);
 app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
-app.post('/webhook2', eventLineRoutes);
+
 
 
 
