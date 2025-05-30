@@ -25,7 +25,7 @@ app.use('/router', machineRoutes);
 app.use('/router', checkBlockedMachineRoute);
 
 app.use(replyToUserRoutes);
-app.use('/', webhook2Routes);
+
 app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
