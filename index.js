@@ -12,7 +12,7 @@ const productRoutes = require('./routes/productRoutes')
 const webhook3Routes = require("./routes/webhook3");
 const slipRoutes = require("./routes/slipRoutes");
 const adminRoutes = require('./routes/adminRoutes');
-const adtLiveWorkshopRoutes = require('./routes/adtLiveWorkshopRoutes');
+
 
 
 
@@ -28,7 +28,7 @@ app.use('/', productRoutes)
 app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
-app.use("/ADTLiveWorkshop", adtLiveWorkshopRoutes);
+
 
 
 // ✅ กำหนดค่าการเชื่อมต่อ Supabase
@@ -63,20 +63,6 @@ async function updateExpiredSessions() {
   }
 }
 
-// ✅ Webhook จาก LINE (ไว้ debug และรอรับ event อื่น)
-app.post('/webhook2', async (req, res) => {
-  const body = req.body;
-
-  if (body.destination && Array.isArray(body.events)) {
-    const event = body.events[0];
-    if (event && event.source?.userId) {
-      console.log(`[📥] LINE Event Received at ${new Date().toISOString()}`);
-      console.log('LINE USER ID:', event.source.userId);
-    }
-  }
-
-  return res.status(200).send('OK');
-});
 
 // ✅ เริ่มทำงานเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
