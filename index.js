@@ -14,7 +14,7 @@ const slipRoutes = require("./routes/slipRoutes");
 const adminRoutes = require('./routes/adminRoutes');
 const eventLineRoutes = require('./routes/eventLine');
 const flexSendOrderRoute = require('./routes/flexSendOrderRoute');
-
+const tumcivilRoutes = require('./routes/tumcivilRoutes');
 
 
 
@@ -32,6 +32,7 @@ app.use("/webhook3", webhook3Routes);
 app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
 app.use('/', flexSendOrderRoute);
+app.use('/', tumcivilRoutes);
 
 
 
