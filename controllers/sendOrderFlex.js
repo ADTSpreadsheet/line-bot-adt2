@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // LINE Bot 2 Client
 const client = new line.Client({
-  channelAccessToken: process.env.LINE_BOT2_ACCESS_TOKEN
+  channelAccessToken: process.env.TUMCIVIL_BOT_ACCESS_TOKEN
 });
 
 const sendOrderFlex = async (req, res) => {
@@ -157,9 +157,9 @@ const sendOrderFlex = async (req, res) => {
     };
 
     // ส่งไปยัง LINE USER ID ของแอดมิน
-    const targetUserId = process.env.ADMIN_USER_ID_BOT2;
+    const targetUserId = process.env.TUMCIVIL_ADMIN_USER_ID;
     if (!targetUserId) {
-      throw new Error("❌ ไม่พบ ADMIN_USER_ID_BOT2 ใน .env");
+      throw new Error("❌ ไม่พบ TUMCIVIL_ADMIN_USER_ID .env");
     }
 
     console.log("📤 กำลังส่ง Flex Message ไปยัง Admin:", targetUserId);
