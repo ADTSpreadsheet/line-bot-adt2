@@ -1,4 +1,5 @@
 const line = require('@line/bot-sdk');
+const { supabase } = require('../utils/supabaseClient'); // เพิ่ม supabase client
 require('dotenv').config();
 
 // LINE Bot 2 Client
@@ -8,21 +9,47 @@ const client = new line.Client({
 
 const sendOrderFlex = async (req, res) => {
   try {
-    const {
-      license_no,
-      first_name,
-      last_name,
-      phone_number,
-      address
-    } = req.body;
+    const { ref_code, license_no } = req.body;
 
-    if (!license_no || !first_name || !last_name || !phone_number || !address) {
-      return res.status(400).json({ message: 'ข้อมูลไม่ครบถ้วน' });
+    // ตรวจสอบข้อมูลที่ส่งมา
+    if (!ref_code || !license_no) {
+      return res.status(400).json({ message: 'ต้องมี ref_code และ license_no' });
     }
 
+    console.log("🔍 กำลังดึงข้อมูลจาก database:", { ref_code, license_no });
+
+    // ดึงข้อมูลจาก license_holders
+    const { data: licenseData, error: licenseError } = await supabase
+      .from('license_holders')
+      .select('*')
+      .eq('license_no', license_no)
+      .eq('ref_code', ref_code)
+      .single();
+
+    if (licenseError || !licenseData) {
+      console.error("❌ ไม่พบข้อมูลใน license_holders:", licenseError);
+      return res.status(404).json({ message: 'ไม่พบข้อมูล license' });
+    }
+
+    // ดึงข้อมูลจาก slip_submissions
+    const { data: slipData, error: slipError } = await supabase
+      .from('slip_submissions')
+      .select('*')
+      .eq('license_no', license_no)
+      .eq('ref_code', ref_code)
+      .single();
+
+    if (slipError || !slipData) {
+      console.error("❌ ไม่พบข้อมูลใน slip_submissions:", slipError);
+      return res.status(404).json({ message: 'ไม่พบข้อมูล slip' });
+    }
+
+    console.log("✅ ดึงข้อมูลครบแล้ว:", { licenseData, slipData });
+
+    // สร้าง Flex Message
     const flexMessage = {
       type: 'flex',
-      altText: `รายการใหม่จาก ${first_name} ${last_name}`,
+      altText: `รายการใหม่จาก ${licenseData.first_name} ${licenseData.last_name}`,
       contents: {
         type: 'bubble',
         header: {
@@ -31,9 +58,10 @@ const sendOrderFlex = async (req, res) => {
           contents: [
             {
               type: 'text',
-              text: 'แจ้งเตือนคำสั่งซื้อใหม่',
+              text: '🔔 แจ้งเตือนคำสั่งซื้อใหม่',
               weight: 'bold',
-              size: 'lg'
+              size: 'lg',
+              color: '#FF5551'
             }
           ]
         },
@@ -44,71 +72,114 @@ const sendOrderFlex = async (req, res) => {
           contents: [
             {
               type: 'text',
-              text: `License No: ${license_no}`,
+              text: `📋 License: ${licenseData.license_no}`,
               weight: 'bold',
               size: 'sm'
             },
             {
               type: 'text',
-              text: `ชื่อ: ${first_name} ${last_name}`,
+              text: `👤 ชื่อ: ${licenseData.first_name} ${licenseData.last_name}`,
               size: 'sm'
             },
             {
               type: 'text',
-              text: `เบอร์โทร: ${phone_number}`,
+              text: `📱 เบอร์: ${licenseData.phone_number}`,
               size: 'sm'
             },
             {
               type: 'text',
-              text: `ที่อยู่: ${address}`,
+              text: `🆔 เลขบัตร: ${licenseData.national_id}`,
+              size: 'sm'
+            },
+            {
+              type: 'text',
+              text: `📍 ที่อยู่: ${licenseData.address}`,
               size: 'sm',
               wrap: true
+            },
+            {
+              type: 'text',
+              text: `📦 สินค้า: ${slipData.product_source}`,
+              size: 'sm'
+            },
+            {
+              type: 'text',
+              text: `🔖 Ref: ${ref_code}`,
+              size: 'sm'
             }
           ]
         },
         footer: {
           type: 'box',
-          layout: 'horizontal',
+          layout: 'vertical',
           spacing: 'md',
           contents: [
-            {
+            // ปุ่มดูสลิป (ถ้ามี slip_image_url)
+            ...(slipData.slip_image_url ? [{
               type: 'button',
-              style: 'primary',
-              color: '#28a745',
+              style: 'link',
               action: {
-                type: 'postback',
-                label: '✅ อนุมัติ',
-                data: `approve_order&${license_no}`
+                type: 'uri',
+                label: '📄 ดูสลิปการโอนเงิน',
+                uri: slipData.slip_image_url
               }
-            },
+            }] : []),
             {
-              type: 'button',
-              style: 'secondary',
-              color: '#dc3545',
-              action: {
-                type: 'postback',
-                label: '❌ ปฏิเสธ',
-                data: `reject_order&${license_no}`
-              }
+              type: 'box',
+              layout: 'horizontal',
+              spacing: 'md',
+              contents: [
+                {
+                  type: 'button',
+                  style: 'primary',
+                  color: '#28a745',
+                  action: {
+                    type: 'postback',
+                    label: '✅ อนุมัติ',
+                    data: `approve_order&${license_no}&${ref_code}`
+                  }
+                },
+                {
+                  type: 'button',
+                  style: 'secondary',
+                  color: '#dc3545',
+                  action: {
+                    type: 'postback',
+                    label: '❌ ปฏิเสธ',
+                    data: `reject_order&${license_no}&${ref_code}`
+                  }
+                }
+              ]
             }
           ]
         }
       }
     };
 
-    // ส่งไปยัง LINE USER ID ของแอดมิน (คุณตั้ม)
+    // ส่งไปยัง LINE USER ID ของแอดมิน
     const targetUserId = process.env.ADMIN_USER_ID_BOT2;
     if (!targetUserId) {
       throw new Error("❌ ไม่พบ ADMIN_USER_ID_BOT2 ใน .env");
     }
 
+    console.log("📤 กำลังส่ง Flex Message ไปยัง Admin:", targetUserId);
+
     await client.pushMessage(targetUserId, flexMessage);
 
-    return res.status(200).json({ message: '✅ ส่ง Flex สำเร็จแล้วครับ' });
+    console.log("✅ ส่ง Flex Message สำเร็จ");
+
+    return res.status(200).json({ 
+      message: '✅ ส่ง Flex สำเร็จแล้ว',
+      license_no,
+      ref_code
+    });
 
   } catch (error) {
     console.error('❌ ส่ง Flex ล้มเหลว:', error);
-    return res.status(500).json({ message: 'เกิดข้อผิดพลาดในการส่ง Flex' });
+    return res.status(500).json({ 
+      message: 'เกิดข้อผิดพลาดในการส่ง Flex',
+      error: error.message
+    });
   }
 };
 
