@@ -99,6 +99,11 @@ const sendOrderFlex = async (req, res) => {
             },
             {
               type: 'text',
+              text: `📮 รหัสไปรษณีย์: ${licenseData.postal_code}`,
+              size: 'sm'
+            },
+            {
+              type: 'text',
               text: `📦 สินค้า: ${slipData.product_source}`,
               size: 'sm'
             },
@@ -136,9 +141,7 @@ const sendOrderFlex = async (req, res) => {
                   action: {
                     type: 'uri',
                     label: '✅ อนุมัติ',
-                    uri: `https://line-bot-adt.onrender.com/notify-customer?ref_code=${ref_code}&license_no=${license_no}`
-
-
+                    uri: `https://line-bot-adt.onrender.com/approve-order?ref_code=${ref_code}&license_no=${license_no}`
                   }
                 },
                 {
@@ -148,7 +151,7 @@ const sendOrderFlex = async (req, res) => {
                   action: {
                     type: 'uri',
                     label: '❌ ปฏิเสธ',
-                    uri: `https://line-bot-adt.onrender.com/reject-order?ref_code=${ref_code}`
+                    uri: `https://line-bot-adt.onrender.com/reject-order?ref_code=${ref_code}&license_no=${license_no}`
                   }
                 }
               ]
@@ -161,7 +164,7 @@ const sendOrderFlex = async (req, res) => {
     // ส่งไปยัง LINE USER ID ของแอดมิน
     const targetUserId = process.env.ADMIN_USER_ID_BOT2;
     if (!targetUserId) {
-      throw new Error("❌ ไม่พบ TUMCIVIL_ADMIN_USER_ID .env");
+      throw new Error("❌ ไม่พบ ADMIN_USER_ID_BOT2 .env");
     }
 
     console.log("📤 กำลังส่ง Flex Message ไปยัง Admin:", targetUserId);
