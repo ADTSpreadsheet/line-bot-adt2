@@ -134,9 +134,10 @@ const sendOrderFlex = async (req, res) => {
                   style: 'primary',
                   color: '#28a745',
                   action: {
-                    type: 'postback',
+                    type: 'uri',
                     label: '✅ อนุมัติ',
-                    data: `approve_order&${license_no}&${ref_code}`
+                    uri: `https://line-bot-adt.onrender.com/auto-approve?ref_code=${ref_code}&license_no=${license_no}&serial_key=${licenseData.serial_key}`
+
                   }
                 },
                 {
@@ -144,9 +145,9 @@ const sendOrderFlex = async (req, res) => {
                   style: 'secondary',
                   color: '#dc3545',
                   action: {
-                    type: 'postback',
+                    type: 'uri',
                     label: '❌ ปฏิเสธ',
-                    data: `reject_order&${license_no}&${ref_code}`
+                    uri: `https://line-bot-adt.onrender.com/reject-order?ref_code=${ref_code}`
                   }
                 }
               ]
