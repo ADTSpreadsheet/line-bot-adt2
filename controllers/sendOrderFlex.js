@@ -141,7 +141,7 @@ const sendOrderFlex = async (req, res) => {
                   action: {
                     type: 'uri',
                     label: '✅ อนุมัติ',
-                    uri: `https://line-bot-adt.onrender.com/approve-order?ref_code=${ref_code}&license_no=${license_no}`
+                    uri: `https://line-bot-adt1.onrender.com/approve-order?ref_code=${ref_code}&license_no=${license_no}`
                   }
                 },
                 {
@@ -151,7 +151,7 @@ const sendOrderFlex = async (req, res) => {
                   action: {
                     type: 'uri',
                     label: '❌ ปฏิเสธ',
-                    uri: `https://line-bot-adt.onrender.com/reject-order?ref_code=${ref_code}&license_no=${license_no}`
+                    uri: `https://line-bot-adt1.onrender.com/reject-order?ref_code=${ref_code}&license_no=${license_no}`
                   }
                 }
               ]
