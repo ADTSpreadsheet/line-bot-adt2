@@ -4,8 +4,8 @@ const router = express.Router();
 // Import Controller
 const { handleTumcivilWebhook } = require('../controllers/tumcivilWebhookHandler');
 
-// Route สำหรับ TumCivil LINE Webhook
-router.post('/tumcivil-webhook', handleTumcivilWebhook);
+// Route สำหรับ TumCivil LINE Webhook (ใช้ /webhook2 ตาม LINE Console)
+router.post('/webhook2', handleTumcivilWebhook);
 
 // Health check route สำหรับ TumCivil
 router.get('/tumcivil-health', (req, res) => {
