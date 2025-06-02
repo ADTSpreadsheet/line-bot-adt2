@@ -23,7 +23,7 @@ const handleTumcivilWebhook = async (req, res) => {
           const status = action === 'approve' ? 'Ap' : 'Rj';
           
           // ยิง POST ไป API1
-          const response = await axios.post(`https://line-bot-adt1.onrender.com/${action}-order`, {
+          const response = await axios.post(`https://line-bot-adt.onrender.com/${action}-order`, {
             ref_code,
             license_no,
             status
