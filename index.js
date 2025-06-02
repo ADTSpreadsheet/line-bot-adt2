@@ -16,7 +16,7 @@ const eventLineRoutes = require('./routes/eventLine');
 const flexSendOrderRoute = require('./routes/flexSendOrderRoute');
 const tumcivilRoutes = require('./routes/tumcivilRoutes');
 const orderRoutes = require('./routes/orderRoutes');
-const tumcivilWebhookRoutes = require('./routes/tumcivilWebhookRoutes');
+
 
 
 
@@ -38,7 +38,7 @@ app.use('/', adminRoutes);
 app.use('/', flexSendOrderRoute);
 app.use('/', tumcivilRoutes);
 app.use('/', orderRoutes);
-app.use('/', tumcivilWebhookRoutes);
+
 
 
 
