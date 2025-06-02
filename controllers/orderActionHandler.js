@@ -10,22 +10,16 @@ const handleOrderAction = async (req, res) => {
   try {
     const { ref_code, license_no, action } = req.query;
     
-    // ตรวจสอบ parameters
-    if (!ref_code || !license_no || !action) {
-      return res.status(400).send('❌ ข้อมูลไม่ครบ');
-    }
-    
     console.log(`📥 Admin กด${action === 'Ap' ? 'อนุมัติ' : 'ปฏิเสธ'}: ${ref_code}, ${license_no}`);
     
     // 🔥 ยิง POST ไป API1
     const response = await axios.post(`${process.env.API1_URL}/api/process-order`, {
       ref_code,
       license_no,
-      status: action // 'Ap' หรือ 'Rj'
+      status: action
     });
     
     if (response.status === 200) {
-      // ✅ สำเร็จ - แจ้ง Admin
       const statusText = action === 'Ap' ? 'อนุมัติ' : 'ปฏิเสธ';
       await client.pushMessage(process.env.ADMIN_USER_ID_BOT2, {
         type: 'text',
@@ -37,13 +31,6 @@ const handleOrderAction = async (req, res) => {
     
   } catch (error) {
     console.error('❌ ประมวลผลล้มเหลว:', error);
-    
-    const statusText = req.query.action === 'Ap' ? 'อนุมัติ' : 'ปฏิเสธ';
-    await client.pushMessage(process.env.ADMIN_USER_ID_BOT2, {
-      type: 'text',
-      text: `❌ ${statusText}ล้มเหลว\n📋 License: ${req.query.license_no}\n🔖 Ref: ${req.query.ref_code}\nError: ${error.message}`
-    });
-    
     return res.status(500).send('❌ เกิดข้อผิดพลาด');
   }
 };
