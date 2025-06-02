@@ -7,10 +7,22 @@ const client = new line.Client({
 });
 
 const handleTumcivilWebhook = async (req, res) => {
+  console.log('🔥🔥🔥 WEBHOOK ได้รับข้อมูล:', JSON.stringify(req.body, null, 2));
+  console.log('🔥🔥🔥 REQUEST HEADERS:', JSON.stringify(req.headers, null, 2));
+  
   try {
     const events = req.body.events;
+    console.log('📋📋📋 EVENTS:', events);
+    
+    if (!events || events.length === 0) {
+      console.log('❌ ไม่มี events');
+      return res.status(200).json({ message: 'No events' });
+    }
     
     for (const event of events) {
+      console.log('🎯 EVENT TYPE:', event.type);
+      console.log('🎯 EVENT:', JSON.stringify(event, null, 2));
+      
       if (event.type === 'postback') {
         const data = new URLSearchParams(event.postback.data);
         const action = data.get('action');
