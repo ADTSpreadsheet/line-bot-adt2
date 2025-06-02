@@ -136,7 +136,8 @@ const sendOrderFlex = async (req, res) => {
                   action: {
                     type: 'uri',
                     label: '✅ อนุมัติ',
-                    uri: `https://line-bot-adt.onrender.com/auto-approve?ref_code=${ref_code}&license_no=${license_no}&serial_key=${licenseData.serial_key}`
+                    uri: `https://line-bot-adt.onrender.com/auto-approve?ref_code=${ref_code}&license_no=${license_no}`
+
 
                   }
                 },
