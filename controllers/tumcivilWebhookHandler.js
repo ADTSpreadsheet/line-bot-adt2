@@ -47,9 +47,24 @@ const handleTumcivilWebhook = async (req, res) => {
     
     // แจ้งข้อผิดพลาดกลับไปยัง Admin
     if (req.body.events && req.body.events[0]) {
+      
+      // ตรวจสอบว่าเป็น Duplicate Error ไหม
+      let errorMessage = `❌ TumCivil ระบบขัดข้อง\nError: ${error.message}\n🔧 กรุณาติดต่อทีมพัฒนา`;
+      
+      if (error.response && error.response.status === 400) {
+        // Extract ref_code from error message or postback data
+        const event = req.body.events[0];
+        const data = new URLSearchParams(event.postback.data);
+        const ref_code = data.get('ref_code');
+        const action = data.get('action');
+        const actionText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+        
+        errorMessage = `⚠️ หมายเลข Ref.Code ${ref_code}\nคุณได้ทำการ${actionText}ไปแล้ว`;
+      }
+      
       await client.replyMessage(req.body.events[0].replyToken, {
         type: 'text',
-        text: `❌ TumCivil ระบบขัดข้อง\nError: ${error.message}\n🔧 กรุณาติดต่อทีมพัฒนา`
+        text: errorMessage
       });
     }
     
