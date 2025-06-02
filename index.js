@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const eventLineRoutes = require('./routes/eventLine');
 const flexSendOrderRoute = require('./routes/flexSendOrderRoute');
 const tumcivilRoutes = require('./routes/tumcivilRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 
 
@@ -35,6 +36,7 @@ app.use("/slip", slipRoutes);
 app.use('/', adminRoutes);
 app.use('/', flexSendOrderRoute);
 app.use('/', tumcivilRoutes);
+app.use('/', orderRoutes);
 
 
 
