@@ -263,7 +263,7 @@ const sendStarterSlipToAdmin = async (req, res) => {
     // สร้าง Flex Message
     const flexMessage = createStarterPlanFlexMessage(userData, ref_code, duration);
 
-    const targetUserId = process.env.ADMIN_LINE_BOT2_USER_ID;
+    const targetUserId = process.env.ADMIN_USER_ID_BOT2;
     
     console.log(`📤 [${ref_code}] กำลังส่ง Flex Message ไปยัง Admin: ${targetUserId}`);
 
