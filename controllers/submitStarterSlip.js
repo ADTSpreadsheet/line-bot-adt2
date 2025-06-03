@@ -3,7 +3,7 @@ const { supabase } = require('../utils/supabaseClient');
 require('dotenv').config();
 
 // ตรวจสอบ Environment Variables ที่จำเป็น
-const requiredEnvVars = ['LINE_BOT2_ACCESS_TOKEN', 'ADMIN_LINE_BOT2_USER_ID'];
+const requiredEnvVars = ['LINE_BOT2_ACCESS_TOKEN', 'ADMIN_USER_ID_BOT2'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
