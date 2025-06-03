@@ -42,7 +42,7 @@ const submitStarterSlip = async (req, res) => {
               text: "แจ้งเตือนคำสั่งซื้อใหม่",
               size: "lg",
               weight: "bold",
-              color: "#007BFF" // สีน้ำเงินฟ้า
+              color: "#007BFF"
             }
           ]
         },
@@ -96,9 +96,9 @@ const submitStarterSlip = async (req, res) => {
       }
     };
 
+    // ✅ ส่ง Flex ไปที่ LINE Admin
     await client.pushMessage(process.env.BOT2_LINE_USER_ID, flexMessage);
 
-    // ✅ ส่งกลับไปให้ frontend/API1
     return res.status(200).json({ message: 'ส่ง Flex สำเร็จแล้ว' });
 
   } catch (err) {
