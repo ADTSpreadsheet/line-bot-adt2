@@ -5,6 +5,6 @@ const router = express.Router();
 const { sendStarterSlipToAdmin } = require('../controllers/submitStarterSlip');
 
 // ✅ POST route จาก API1 → ส่ง Flex ให้ Bot2 (Admin)
-router.post('/notify-admin-slip', sendStarterSlipToAdmin);
+router.post('/notify-user-starter', sendStarterSlipToAdmin);
 
 module.exports = router;
