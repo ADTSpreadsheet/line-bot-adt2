@@ -1,6 +1,5 @@
 const axios = require('axios');
 const line = require('@line/bot-sdk');
-const submitStarterSlipModule = require('./submitStarterSlip');
 require('dotenv').config();
 
 const client = new line.Client({
@@ -46,24 +45,6 @@ const handleTumcivilWebhook = async (req, res) => {
             if (response.status === 200) {
               const actionText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
               const planName = plan_type ? 'Starter' : 'Professional';
-              
-              // 🎨 แก้ไข Flex Message ของ Admin (เฉพาะ Starter Plan)
-              if (plan_type === 'starter') {
-                try {
-                  console.log('🎨 กำลังแก้ไข Flex Message ของ Admin...');
-                  await submitStarterSlipModule.editAdminFlexMessage({
-                    body: { 
-                      ref_code, 
-                      action: action === 'approve' ? 'approved' : 'rejected',
-                      duration: 1 // Starter Plan = 1 วัน (ปรับตามจริง)
-                    }
-                  });
-                  console.log('✅ แก้ไข Flex Message ของ Admin สำเร็จ');
-                } catch (flexError) {
-                  console.error('⚠️ ไม่สามารถแก้ไข Flex Message ได้:', flexError.message);
-                  // ไม่ throw error เพราะการประมวลผลหลักสำเร็จแล้ว
-                }
-              }
               
               await client.replyMessage(event.replyToken, {
                 type: 'text',
