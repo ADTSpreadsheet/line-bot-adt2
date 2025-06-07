@@ -1,6 +1,6 @@
 const axios = require('axios');
 const line = require('@line/bot-sdk');
-const editAdminFlexMessage = require('./submitStarterSlip').editAdminFlexMessage;
+const submitStarterSlipModule = require('./submitStarterSlip');
 require('dotenv').config();
 
 const client = new line.Client({
@@ -51,7 +51,7 @@ const handleTumcivilWebhook = async (req, res) => {
               if (plan_type === 'starter') {
                 try {
                   console.log('🎨 กำลังแก้ไข Flex Message ของ Admin...');
-                  await editAdminFlexMessage({
+                  await submitStarterSlipModule.editAdminFlexMessage({
                     body: { 
                       ref_code, 
                       action: action === 'approve' ? 'approved' : 'rejected',
