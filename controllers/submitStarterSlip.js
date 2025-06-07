@@ -59,81 +59,76 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
         contents: [
           {
             type: "text",
-            text: "🔔 แจ้งเตือนคำสั่งซื้อใหม่",
-            size: "lg",
+            text: "🔔 Starter Plan - คำสั่งซื้อใหม่",
+            size: "md",
             weight: "bold",
             color: "#007BFF"
-          },
-          {
-            type: "text",
-            text: `Starter Plan - ${duration} วัน`,
-            size: "sm",
-            color: "#666666",
-            margin: "xs"
           }
         ],
         backgroundColor: "#F8F9FA",
-        paddingAll: "lg"
+        paddingAll: "sm"
       },
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "md",
+        spacing: "xs",
         contents: [
-          {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: [
-              {
-                type: "text",
-                text: "📋 ข้อมูลลูกค้า",
-                weight: "bold",
-                color: "#333333",
-                size: "md"
-              },
-              { type: "text", text: `👤 ชื่อ: ${full_name}`, wrap: true, size: "sm" },
-              { type: "text", text: `📱 เบอร์: ${phone_number}`, wrap: true, size: "sm" },
-              { type: "text", text: `🆔 เลขบัตร: ${national_id}`, wrap: true, size: "sm" }
-            ]
-          },
-          { type: "separator", margin: "md" },
-          {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: [
-              {
-                type: "text",
-                text: "📦 รายละเอียดแพ็กเกจ",
-                weight: "bold",
-                color: "#333333",
-                size: "md"
-              },
-              { type: "text", text: `⏰ ระยะเวลา: ${duration} วัน`, wrap: true, size: "sm" },
-              { type: "text", text: `🔢 Ref Code: ${ref_code}`, wrap: true, size: "sm", color: "#007BFF" }
-            ]
-          }
+          { type: "text", text: `🔢 Ref.Code: ${ref_code}`, size: "sm", weight: "bold", color: "#007BFF" },
+          { type: "text", text: `👤 ชื่อ: ${full_name}`, size: "sm" },
+          { type: "text", text: `📱 เบอร์: ${phone_number}`, size: "sm" },
+          { type: "text", text: `🆔 เลขบัตร: ${national_id}`, size: "sm" },
+          { type: "text", text: `⏰ ระยะเวลา: ${duration} วัน`, size: "sm" }
         ],
-        paddingAll: "lg"
+        paddingAll: "sm"
       },
       footer: {
         type: "box",
         layout: "vertical",
-        spacing: "md",
-        contents: slip_image_url
-          ? [{
-              type: "button",
-              action: {
-                type: "uri",
-                label: "📄 ดูสลิปการโอน",
-                uri: slip_image_url
+        spacing: "xs",
+        contents: [
+          // ปุ่มดูสลิป (ถ้ามี slip_image_url)
+          ...(slip_image_url ? [{
+            type: 'button',
+            style: 'link',
+            action: {
+              type: 'uri',
+              label: '📄 ดูสลิป',
+              uri: slip_image_url
+            },
+            height: "sm"
+          }] : []),
+          // ปุ่มอนุมัติ/ปฏิเสธ
+          {
+            type: 'box',
+            layout: 'horizontal',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'button',
+                style: 'primary',
+                color: '#28a745',
+                action: {
+                  type: 'postback',
+                  label: '✅ อนุมัติ',
+                  data: `action=approve&ref_code=${ref_code}&plan_type=starter`
+                },
+                height: "sm"
               },
-              style: "primary",
-              color: "#007BFF"
-            }]
-          : [],
-        paddingAll: "lg"
+              {
+                type: 'button',
+                style: 'secondary',
+                color: '#dc3545',
+                action: {
+                  type: 'postback',
+                  label: '❌ ปฏิเสธ',
+                  data: `action=reject&ref_code=${ref_code}&plan_type=starter`
+                },
+                height: "sm"
+              }
+            ]
+          }
+        ],
+        paddingAll: "sm"
       }
     }
   };
@@ -145,6 +140,8 @@ const sendStarterSlipToAdmin = async (req, res) => {
   try {
     const { ref_code, duration } = req.body;
 
+    console.log('🔍 กำลังค้นหาข้อมูลใน starter_plan_users:', { ref_code, duration });
+
     const { data: userData, error: fetchError } = await supabase
       .from('starter_plan_users')
       .select('first_name, last_name, phone_number, national_id, slip_image_url, submissions_status')
@@ -152,6 +149,7 @@ const sendStarterSlipToAdmin = async (req, res) => {
       .single();
 
     if (fetchError || !userData) {
+      console.error('❌ ไม่พบข้อมูลใน starter_plan_users:', fetchError);
       return res.status(404).json({ 
         success: false,
         message: 'ไม่พบข้อมูลผู้ใช้หรือ ref_code ไม่ถูกต้อง',
@@ -159,7 +157,10 @@ const sendStarterSlipToAdmin = async (req, res) => {
       });
     }
 
+    console.log('✅ พบข้อมูลผู้ใช้:', userData);
+
     if (userData.submissions_status === 'notified_admin') {
+      console.log('⚠️ แอดมินได้รับการแจ้งเตือนแล้ว');
       return res.status(200).json({
         success: true,
         message: 'แอดมินได้รับการแจ้งเตือนแล้ว',
@@ -168,10 +169,14 @@ const sendStarterSlipToAdmin = async (req, res) => {
       });
     }
 
+    console.log('📱 กำลังสร้าง Flex Message...');
     const flexMessage = createStarterPlanFlexMessage(userData, ref_code, duration);
     const adminId = process.env.ADMIN_USER_ID_BOT2;
 
+    console.log('📤 กำลังส่ง Flex Message ไปยัง Admin:', adminId);
     await client.pushMessage(adminId, flexMessage);
+
+    console.log('✅ ส่ง Flex Message สำเร็จ');
 
     const processingTime = Date.now() - startTime;
 
@@ -187,6 +192,7 @@ const sendStarterSlipToAdmin = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ เกิดข้อผิดพลาดในการส่ง Flex Message:', error);
     const processingTime = Date.now() - startTime;
 
     return res.status(500).json({
