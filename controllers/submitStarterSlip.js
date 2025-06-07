@@ -371,7 +371,4 @@ const editAdminFlexMessage = async (req, res) => {
   }
 };
 
-module.exports = { 
-  sendStarterSlipToAdmin,
-  editAdminFlexMessage 
-};
+module.exports = sendStarterSlipToAdmin;
