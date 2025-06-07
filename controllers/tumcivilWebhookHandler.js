@@ -21,33 +21,43 @@ const handleTumcivilWebhook = async (req, res) => {
         const data = new URLSearchParams(event.postback.data);
         const action = data.get('action');
         const ref_code = data.get('ref_code');
-        const license_no = data.get('license_no');
+        const license_no = data.get('license_no');      // สำหรับ Pro Plan
+        const plan_type = data.get('plan_type');        // สำหรับ Starter Plan
         
-        console.log(`📥 TumCivil Admin กด${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}: ${ref_code}, ${license_no}`);
+        // แสดง log ให้ถูกต้อง
+        const planInfo = license_no || plan_type || 'unknown';
+        console.log(`📥 TumCivil Admin กด${action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}: ${ref_code}, ${planInfo}`);
         
         if (action === 'approve' || action === 'reject') {
-          const status = action === 'approve' ? 'Ap' : 'Rj';
-          
           try {
-            // ยิง POST ไป API1
-            const response = await axios.post(`https://line-bot-adt.onrender.com/${action}-order`, {
+            // เรียก API1 processOrder (endpoint เดียวสำหรับทุก plan)
+            const requestBody = {
               ref_code,
-              license_no,
-              status
-            });
+              action,
+              license_no,    // จะเป็น null สำหรับ Starter Plan
+              plan_type      // จะเป็น null สำหรับ Pro Plan
+            };
+
+            console.log('📤 กำลังเรียก API1 processOrder:', requestBody);
+
+            const response = await axios.post(`https://line-bot-adt.onrender.com/processOrder`, requestBody);
             
             if (response.status === 200) {
-              const statusText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+              const actionText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+              const planName = plan_type ? 'Starter' : 'Professional';
+              
               await client.replyMessage(event.replyToken, {
                 type: 'text',
-                text: `✅ TumCivil ${statusText}คำสั่งซื้อสำเร็จ\n📋 License: ${license_no}\n🔖 Ref: ${ref_code}\n🏢 ดำเนินการโดย: TumCivil Admin`
+                text: `✅ TumCivil ${actionText}คำสั่งซื้อสำเร็จ\n📦 แพคเกจ: ${planName} Plan\n🔖 Ref: ${ref_code}\n🏢 ดำเนินการโดย: TumCivil Admin`
               });
               
-              // ส่งข้อความสำเร็จแล้ว ตอบ 200
+              console.log('✅ TumCivil ประมวลผลสำเร็จ');
               return res.status(200).json({ message: 'TumCivil Success' });
             }
             
           } catch (apiError) {
+            console.error('❌ TumCivil API Error:', apiError.response?.data || apiError.message);
+            
             // Handle API errors specifically
             if (apiError.response && apiError.response.status === 400) {
               // Duplicate Error - ส่งข้อความแล้วตอบ 400 (ไม่ retry)
@@ -59,8 +69,19 @@ const handleTumcivilWebhook = async (req, res) => {
                 text: errorMessage
               });
               
-              // ตอบ 400 เพื่อไม่ให้ retry
               return res.status(400).json({ message: 'Duplicate request handled' });
+              
+            } else if (apiError.response && apiError.response.status === 404) {
+              // API1 ไม่พบ endpoint
+              const errorMessage = `❌ TumCivil ระบบขัดข้อง\nไม่พบ endpoint ที่ต้องการ\n🔧 กรุณาติดต่อทีมพัฒนา`;
+              
+              await client.replyMessage(event.replyToken, {
+                type: 'text',
+                text: errorMessage
+              });
+              
+              return res.status(500).json({ error: 'API endpoint not found' });
+              
             } else {
               // Error อื่นๆ - ส่งข้อความแล้วตอบ 500 (อาจ retry)
               const errorMessage = `❌ TumCivil ระบบขัดข้อง\nError: ${apiError.message}\n🔧 กรุณาติดต่อทีมพัฒนา`;
@@ -70,7 +91,6 @@ const handleTumcivilWebhook = async (req, res) => {
                 text: errorMessage
               });
               
-              // ตอบ 500 เพื่อให้ LINE อาจ retry ได้
               return res.status(500).json({ error: apiError.message });
             }
           }
@@ -83,7 +103,6 @@ const handleTumcivilWebhook = async (req, res) => {
     
   } catch (error) {
     console.error('❌ TumCivil Webhook error:', error);
-    // Error ระดับ function - ตอบ 500
     res.status(500).json({ error: error.message });
   }
 };
