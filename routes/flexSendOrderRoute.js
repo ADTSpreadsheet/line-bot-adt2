@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { sendOrderFlex } = require('../controllers/sendOrderFlex');
+const { sendToAPI1 } = require('../controllers/sendToCustomerController');
 
 // Endpoint: POST /flex/send-order
-router.post('/flex/send-order', sendOrderFlex);
+router.post('/flex/send-order', sendToAPI1);
 
 module.exports = router;
