@@ -175,9 +175,27 @@ const sendStarterSlipToAdmin = async (req, res) => {
     const adminId = process.env.ADMIN_USER_ID_BOT2;
 
     console.log('📤 กำลังส่ง Flex Message ไปยัง Admin:', adminId);
-    await client.pushMessage(adminId, flexMessage);
+    const result = await client.pushMessage(adminId, flexMessage);
 
     console.log('✅ ส่ง Flex Message สำเร็จ');
+
+    // 🎯 เก็บ messageId เพื่อใช้แก้ไข Flex ภายหลัง
+    if (result.sentMessages && result.sentMessages.length > 0) {
+      const messageId = result.sentMessages[0].id;
+      console.log('📝 กำลังเก็บ messageId:', messageId);
+
+      const { error: updateError } = await supabase
+        .from('starter_plan_users')
+        .update({ admin_message_id: messageId })
+        .eq('ref_code', ref_code);
+
+      if (updateError) {
+        console.error('⚠️ ไม่สามารถเก็บ messageId ได้:', updateError);
+        // ไม่ throw error เพราะการส่ง Flex สำเร็จแล้ว
+      } else {
+        console.log('✅ เก็บ messageId สำเร็จ');
+      }
+    }
 
     const processingTime = Date.now() - startTime;
 
