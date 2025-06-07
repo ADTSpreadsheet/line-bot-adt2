@@ -45,7 +45,7 @@ const validateInput = (req, res, next) => {
 };
 
 const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
-  const { first_name, last_name, phone_number, national_id, slip_image_url } = userData;
+  const { first_name, last_name, phone_number, national_id, slip_image_url, order_number, price_thb } = userData;
   const full_name = `${first_name} ${last_name}`;
 
   return {
@@ -59,7 +59,7 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
         contents: [
           {
             type: "text",
-            text: "🔔 Starter Plan - คำสั่งซื้อใหม่",
+            text: `🔔 Starter Plan no. ${order_number || 'N/A'}`,
             size: "md",
             weight: "bold",
             color: "#007BFF"
@@ -77,7 +77,8 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
           { type: "text", text: `👤 ชื่อ: ${full_name}`, size: "sm" },
           { type: "text", text: `📱 เบอร์: ${phone_number}`, size: "sm" },
           { type: "text", text: `🆔 เลขบัตร: ${national_id}`, size: "sm" },
-          { type: "text", text: `⏰ ระยะเวลา: ${duration} วัน`, size: "sm" }
+          { type: "text", text: `⏰ ระยะเวลา: ${duration} วัน`, size: "sm" },
+          { type: "text", text: `💰 ราคาแพคเกจ: ${price_thb || 'N/A'} บาท`, size: "sm" }
         ],
         paddingAll: "sm"
       },
@@ -144,7 +145,7 @@ const sendStarterSlipToAdmin = async (req, res) => {
 
     const { data: userData, error: fetchError } = await supabase
       .from('starter_plan_users')
-      .select('first_name, last_name, phone_number, national_id, slip_image_url, submissions_status')
+      .select('first_name, last_name, phone_number, national_id, slip_image_url, submissions_status, order_number, price_thb')
       .eq('ref_code', ref_code)
       .single();
 
@@ -204,7 +205,4 @@ const sendStarterSlipToAdmin = async (req, res) => {
   }
 };
 
-module.exports = {
-  sendStarterSlipToAdmin,
-  validateInput
-};
+module.exports = sendStarterSlipToAdmin;
