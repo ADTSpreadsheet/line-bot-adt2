@@ -184,10 +184,8 @@ const sendStarterSlipToAdmin = async (req, res) => {
 
     console.log('📤 กำลังส่ง Flex Message ไปยัง Admin:', adminId);
 
-    await client.pushMessage(adminId, {
-      to: adminId,
-      messages: [flexMessage]
-    });
+    // ✅ แก้ไขการเรียกใช้ pushMessage ให้ถูกต้อง
+    await client.pushMessage(adminId, flexMessage);
 
     console.log('✅ ส่ง Flex Message สำเร็จ');
 
