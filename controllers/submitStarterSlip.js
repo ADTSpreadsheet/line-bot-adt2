@@ -18,7 +18,7 @@ const validateInput = (req, res, next) => {
   const { ref_code, duration } = req.body;
 
   if (!ref_code || !duration) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       message: 'ต้องมี ref_code และ duration',
       code: 'MISSING_REQUIRED_FIELDS'
@@ -26,7 +26,7 @@ const validateInput = (req, res, next) => {
   }
 
   if (typeof ref_code !== 'string' || typeof duration !== 'number') {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       message: 'ref_code ต้องเป็น string และ duration ต้องเป็น number',
       code: 'INVALID_DATA_TYPE'
@@ -34,7 +34,7 @@ const validateInput = (req, res, next) => {
   }
 
   if (duration < 1 || duration > 15) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       message: 'duration ต้องอยู่ระหว่าง 1-15 วัน',
       code: 'INVALID_DURATION'
@@ -45,7 +45,16 @@ const validateInput = (req, res, next) => {
 };
 
 const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
-  const { first_name, last_name, phone_number, national_id, slip_image_url, order_number, price_thb } = userData;
+  const {
+    first_name,
+    last_name,
+    phone_number,
+    national_id,
+    slip_image_url,
+    order_number,
+    price_thb
+  } = userData;
+
   const full_name = `${first_name} ${last_name}`;
 
   return {
@@ -59,13 +68,13 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
         contents: [
           {
             type: "text",
-            text: `🔔 Starter Plan no. ${order_number || 'N/A'}`,
+            text: `Starter Plan no. ${order_number || 'N/A'}`,
             size: "md",
             weight: "bold",
-            color: "#007BFF"
+            color: "#007bff"
           }
         ],
-        backgroundColor: "#F8F9FA",
+        backgroundColor: "#f8f9fa",
         paddingAll: "sm"
       },
       body: {
@@ -73,12 +82,12 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
         layout: "vertical",
         spacing: "xs",
         contents: [
-          { type: "text", text: `🔢 Ref.Code: ${ref_code}`, size: "sm", weight: "bold", color: "#007BFF" },
-          { type: "text", text: `👤 ชื่อ: ${full_name}`, size: "sm" },
-          { type: "text", text: `📱 เบอร์: ${phone_number}`, size: "sm" },
-          { type: "text", text: `🆔 เลขบัตร: ${national_id}`, size: "sm" },
-          { type: "text", text: `⏰ ระยะเวลา: ${duration} วัน`, size: "sm" },
-          { type: "text", text: `💰 ราคาแพคเกจ: ${price_thb || 'N/A'} บาท`, size: "sm" }
+          { type: "text", text: `Ref.Code: ${ref_code}`, size: "sm", weight: "bold", color: "#007bff" },
+          { type: "text", text: `ชื่อ: ${full_name}`, size: "sm" },
+          { type: "text", text: `เบอร์: ${phone_number}`, size: "sm" },
+          { type: "text", text: `เลขบัตร: ${national_id}`, size: "sm" },
+          { type: "text", text: `ระยะเวลา: ${duration} วัน`, size: "sm" },
+          { type: "text", text: `ราคาแพคเกจ: ${price_thb || 'N/A'} บาท`, size: "sm" }
         ],
         paddingAll: "sm"
       },
@@ -87,18 +96,18 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
         layout: "vertical",
         spacing: "xs",
         contents: [
-          // ปุ่มดูสลิป (ถ้ามี slip_image_url)
-          ...(slip_image_url ? [{
-            type: 'button',
-            style: 'link',
-            action: {
-              type: 'uri',
-              label: '📄 ดูสลิป',
-              uri: slip_image_url
-            },
-            height: "sm"
-          }] : []),
-          // ปุ่มอนุมัติ/ปฏิเสธ
+          ...(slip_image_url
+            ? [{
+                type: 'button',
+                style: 'link',
+                action: {
+                  type: 'uri',
+                  label: 'ดูสลิป',
+                  uri: slip_image_url
+                },
+                height: "sm"
+              }]
+            : []),
           {
             type: 'box',
             layout: 'horizontal',
@@ -110,7 +119,7 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
                 color: '#28a745',
                 action: {
                   type: 'postback',
-                  label: '✅ อนุมัติ',
+                  label: 'อนุมัติ',
                   data: `action=approve&ref_code=${ref_code}&plan_type=starter`
                 },
                 height: "sm"
@@ -121,7 +130,7 @@ const createStarterPlanFlexMessage = (userData, ref_code, duration) => {
                 color: '#dc3545',
                 action: {
                   type: 'postback',
-                  label: '❌ ปฏิเสธ',
+                  label: 'ปฏิเสธ',
                   data: `action=reject&ref_code=${ref_code}&plan_type=starter`
                 },
                 height: "sm"
@@ -151,7 +160,7 @@ const sendStarterSlipToAdmin = async (req, res) => {
 
     if (fetchError || !userData) {
       console.error('❌ ไม่พบข้อมูลใน starter_plan_users:', fetchError);
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
         message: 'ไม่พบข้อมูลผู้ใช้หรือ ref_code ไม่ถูกต้อง',
         ref_code
@@ -170,12 +179,15 @@ const sendStarterSlipToAdmin = async (req, res) => {
       });
     }
 
-    console.log('📱 กำลังสร้าง Flex Message...');
     const flexMessage = createStarterPlanFlexMessage(userData, ref_code, duration);
     const adminId = process.env.ADMIN_USER_ID_BOT2;
 
     console.log('📤 กำลังส่ง Flex Message ไปยัง Admin:', adminId);
-    await client.pushMessage(adminId, flexMessage);
+
+    await client.pushMessage(adminId, {
+      to: adminId,
+      messages: [flexMessage]
+    });
 
     console.log('✅ ส่ง Flex Message สำเร็จ');
 
